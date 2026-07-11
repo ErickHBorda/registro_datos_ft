@@ -9,6 +9,7 @@ import Stepper                 from "../components/ui/Stepper"
 import NavButtons              from "../components/ui/NavButtons"
 import Step1Personal from "../components/steps/Step1Personal"
 import Step2Laboral from "../components/steps/Step2Laboral"
+import Step3Familiares from "../components/steps/Step3Familiares"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -113,7 +114,14 @@ export default function FormularioPage() {
             onChange={actualizarCampo}
         />
       )
-      case 3: return <PasoPlaceholder numero={3} titulo="Familiares" />
+      case 3: return (
+        <Step3Familiares
+            datos={ficha.familiares}
+            onChange={(seccion, campo, valor) =>
+            actualizarSeccion("familiares", valor)
+            }
+        />
+      )
       case 4: return <PasoPlaceholder numero={4} titulo="Formación Académica" />
       case 5: return <PasoPlaceholder numero={5} titulo="Experiencia Laboral" />
       case 6: return <PasoPlaceholder numero={6} titulo="Otros & Reconocimientos" />
