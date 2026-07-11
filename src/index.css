@@ -46,7 +46,7 @@
 
   /* ── Labels ─────────────────────────────────────────── */
   .input-label {
-    @apply block text-xs font-600 text-slate-600 mb-1 uppercase tracking-wide;
+    @apply block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide;
   }
 
   .input-label-required::after {

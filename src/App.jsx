@@ -1,35 +1,44 @@
-// src/App.jsx — prueba de conexión al backend
-import { useEffect, useState } from "react"
-import { checkBackend } from "./services/api"
+// src/App.jsx — prueba temporal de componentes UI
+import { Input, Select, Checkbox, SectionTitle, FieldGrid } from "./components/ui/FormField"
+import { User } from "lucide-react"
 
 export default function App() {
-  const [estado, setEstado] = useState("Verificando conexión...")
-  const [ok, setOk]         = useState(null)
-
-  useEffect(() => {
-    checkBackend()
-      .then(() => { setEstado("Backend conectado ✅"); setOk(true)  })
-      .catch(() => { setEstado("Backend no disponible ❌"); setOk(false) })
-  }, [])
-
   return (
-    <div className="min-h-screen bg-unamba-light flex items-center justify-center">
-      <div className="form-card max-w-sm w-full text-center space-y-4">
-        <div className={`w-12 h-12 rounded-full mx-auto
-          ${ok === true  ? "bg-green-500" :
-            ok === false ? "bg-red-400"   : "bg-slate-300 animate-pulse"}`}
+    <div className="min-h-screen bg-unamba-light p-8">
+      <div className="max-w-2xl mx-auto form-card">
+        <SectionTitle
+          icono={User}
+          titulo="Prueba de Componentes UI"
+          subtitulo="Verificando que los inputs renderizan correctamente"
         />
-        <h1 className="text-xl font-bold text-unamba-blue">
-          Ficha Digital UNAMBA 2025
-        </h1>
-        <p className={`text-sm font-medium
-          ${ok === true  ? "text-green-600" :
-            ok === false ? "text-red-500"   : "text-slate-500"}`}>
-          {estado}
-        </p>
-        <p className="text-xs text-slate-400">
-          API: {import.meta.env.VITE_API_URL}
-        </p>
+        <FieldGrid cols={2}>
+          <Input
+            label="Apellido Paterno"
+            required
+            placeholder="Ej: Quispe"
+          />
+          <Input
+            label="DNI"
+            required
+            placeholder="12345678"
+            error="El DNI debe tener 8 dígitos"
+          />
+          <Select
+            label="Sexo"
+            required
+            opciones={[
+              { value: "Masculino", label: "Masculino" },
+              { value: "Femenino",  label: "Femenino"  },
+            ]}
+          />
+          <Input
+            label="Fecha de Nacimiento"
+            type="date"
+          />
+        </FieldGrid>
+        <div className="mt-4">
+          <Checkbox label="Donador de órganos" />
+        </div>
       </div>
     </div>
   )
