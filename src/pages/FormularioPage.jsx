@@ -8,6 +8,7 @@ import { PASOS_FICHA }         from "../utils/constants"
 import Stepper                 from "../components/ui/Stepper"
 import NavButtons              from "../components/ui/NavButtons"
 import Step1Personal from "../components/steps/Step1Personal"
+import Step2Laboral from "../components/steps/Step2Laboral"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -106,7 +107,12 @@ export default function FormularioPage() {
             onChange={actualizarCampo}
         />
       )
-      case 2: return <PasoPlaceholder numero={2} titulo="Datos Laborales" />
+      case 2: return (
+        <Step2Laboral
+            datos={ficha.datos_laborales}
+            onChange={actualizarCampo}
+        />
+      )
       case 3: return <PasoPlaceholder numero={3} titulo="Familiares" />
       case 4: return <PasoPlaceholder numero={4} titulo="Formación Académica" />
       case 5: return <PasoPlaceholder numero={5} titulo="Experiencia Laboral" />
