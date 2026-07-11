@@ -94,6 +94,7 @@ export function useFicha() {
 
   // ── Actualizar un campo individual de una sección ─────────
   const actualizarCampo = useCallback((seccion, campo, valor) => {
+    console.log("actualizarCampo:", seccion, campo, valor)
     setFicha((prev) => ({
       ...prev,
       [seccion]: { ...prev[seccion], [campo]: valor },

@@ -7,6 +7,7 @@ import { personalService }     from "../services/api"
 import { PASOS_FICHA }         from "../utils/constants"
 import Stepper                 from "../components/ui/Stepper"
 import NavButtons              from "../components/ui/NavButtons"
+import Step1Personal from "../components/steps/Step1Personal"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -30,6 +31,7 @@ export default function FormularioPage() {
     actualizarSeccion, irAlPaso,
     siguientePaso, pasoAnterior,
     prepararPayload, resetFicha,
+    actualizarCampo,
   } = useFicha()
 
   // Ref para subir al inicio al cambiar de paso
@@ -98,7 +100,12 @@ export default function FormularioPage() {
   // ── Render del paso actual ────────────────────────────────
   const renderPaso = () => {
     switch (pasoActual) {
-      case 1: return <PasoPlaceholder numero={1} titulo="Datos Personales" />
+      case 1: return (
+        <Step1Personal
+            datos={ficha.personal}
+            onChange={actualizarCampo}
+        />
+      )
       case 2: return <PasoPlaceholder numero={2} titulo="Datos Laborales" />
       case 3: return <PasoPlaceholder numero={3} titulo="Familiares" />
       case 4: return <PasoPlaceholder numero={4} titulo="Formación Académica" />
