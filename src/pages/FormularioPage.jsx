@@ -15,6 +15,11 @@ import Step5Experiencia from "../components/steps/Step5Experiencia"
 import Step6Otros from "../components/steps/Step6Otros"
 import Step7Revision from "../components/steps/Step7Revision"
 import ModalConfirmacion from "../components/ui/ModalConfirmacion"
+import {
+  validarPaso1, validarPaso2, validarPaso3,
+  validarPaso4, validarPaso5, validarPaso6,
+} from "../utils/validators"
+import { mostrarErroresPaso } from "../components/ui/ToastErrores"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -49,13 +54,90 @@ export default function FormularioPage() {
 
   const [modalVisible, setModalVisible] = useState(false)
 
-  // ── Navegación con scroll ─────────────────────────────────
+  // ── Navegación con validación por paso ────────────────────
   const handleSiguiente = () => {
+    let errores = []
+
+    switch (pasoActual) {
+      case 1:
+        errores = validarPaso1(ficha.personal)
+        if (errores.length > 0) {
+          mostrarErroresPaso(errores, "Datos Personales")
+          scrollTop()
+          return
+        }
+        break
+
+      case 2:
+        errores = validarPaso2(ficha.datos_laborales)
+        if (errores.length > 0) {
+          mostrarErroresPaso(errores, "Datos Laborales")
+          scrollTop()
+          return
+        }
+        break
+
+      case 3:
+        errores = validarPaso3(ficha.familiares)
+        if (errores.length > 0) {
+          mostrarErroresPaso(errores, "Familiares")
+          scrollTop()
+          return
+        }
+        break
+
+      case 4:
+        errores = validarPaso4(
+          ficha.formacion_academica,
+          ficha.otros_estudios,
+        )
+        if (errores.length > 0) {
+          mostrarErroresPaso(errores, "Formación Académica")
+          scrollTop()
+          return
+        }
+        break
+
+      case 5:
+        errores = validarPaso5(
+          ficha.experiencia_laboral,
+          ficha.experiencia_docente,
+        )
+        if (errores.length > 0) {
+          mostrarErroresPaso(errores, "Experiencia Laboral")
+          scrollTop()
+          return
+        }
+        break
+
+      case 6:
+        errores = validarPaso6(
+          ficha.otras_instituciones,
+          ficha.reconocimientos,
+        )
+        if (errores.length > 0) {
+          mostrarErroresPaso(errores, "Otros e Instituciones")
+          scrollTop()
+          return
+        }
+        break
+
+      default:
+        break
+    }
+
     siguientePaso()
     scrollTop()
   }
   const handleAnterior = () => { pasoAnterior(); scrollTop() }
-  const handleIrAlPaso = (n) => { irAlPaso(n); scrollTop() }
+  // ── Ir a un paso solo si ya fue completado ────────────────
+  const handleIrAlPaso = (paso) => {
+    // Solo permitir ir hacia atrás o a pasos ya visitados
+    if (paso < pasoActual) {
+      irAlPaso(paso)
+      scrollTop()
+    }
+  }
 
   // ── Envío final ───────────────────────────────────────────
   const handleEnviar = () => {
