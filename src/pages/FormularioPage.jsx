@@ -11,6 +11,7 @@ import Step1Personal from "../components/steps/Step1Personal"
 import Step2Laboral from "../components/steps/Step2Laboral"
 import Step3Familiares from "../components/steps/Step3Familiares"
 import Step4Formacion from "../components/steps/Step4Formacion"
+import Step5Experiencia from "../components/steps/Step5Experiencia"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -135,7 +136,19 @@ export default function FormularioPage() {
           }
         />
       )
-      case 5: return <PasoPlaceholder numero={5} titulo="Experiencia Laboral" />
+      case 5: return (
+        <Step5Experiencia
+          expLaboral={ficha.experiencia_laboral}
+          expDocente={ficha.experiencia_docente}
+          tipoPersonal={ficha.datos_laborales.tipo_personal}
+          onChangeLaboral={(lista) =>
+            actualizarSeccion("experiencia_laboral", lista)
+          }
+          onChangeDocente={(lista) =>
+            actualizarSeccion("experiencia_docente", lista)
+          }
+        />
+      )
       case 6: return <PasoPlaceholder numero={6} titulo="Otros & Reconocimientos" />
       case 7: return <PasoPlaceholder numero={7} titulo="Revisión Final" />
       default: return null
