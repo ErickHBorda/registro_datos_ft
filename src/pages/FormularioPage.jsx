@@ -12,6 +12,7 @@ import Step2Laboral from "../components/steps/Step2Laboral"
 import Step3Familiares from "../components/steps/Step3Familiares"
 import Step4Formacion from "../components/steps/Step4Formacion"
 import Step5Experiencia from "../components/steps/Step5Experiencia"
+import Step6Otros from "../components/steps/Step6Otros"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -149,7 +150,18 @@ export default function FormularioPage() {
           }
         />
       )
-      case 6: return <PasoPlaceholder numero={6} titulo="Otros & Reconocimientos" />
+      case 6: return (
+        <Step6Otros
+          otrasInstituciones={ficha.otras_instituciones}
+          reconocimientos={ficha.reconocimientos}
+          onChangeInstituciones={(datos) =>
+            actualizarSeccion("otras_instituciones", datos)
+          }
+          onChangeReconocimientos={(lista) =>
+            actualizarSeccion("reconocimientos", lista)
+          }
+        />
+      )
       case 7: return <PasoPlaceholder numero={7} titulo="Revisión Final" />
       default: return null
     }
