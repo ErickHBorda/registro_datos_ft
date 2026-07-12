@@ -66,26 +66,66 @@ export const TIPO_PERSONAL = [
   { value: "Administrativo", label: "Administrativo" },
 ]
 
-export const REGIMEN_276 = [
-  { value: "Ordinario",   label: "Ordinario"   },
-  { value: "Profesional", label: "Profesional" },
-  { value: "Técnico",     label: "Técnico"     },
-  { value: "Auxiliar",    label: "Auxiliar"    },
-  { value: "Principal",   label: "Principal"   },
-  { value: "Asociado",    label: "Asociado"    },
-  { value: "JP",          label: "JP"          },
-]
+// ── Régimen reestructurado ─────────────────────────────────
 
-export const REGIMEN_1057 = [
-  { value: "CAS Permanente",  label: "CAS Permanente"  },
-  { value: "CAS Determinado", label: "CAS Determinado" },
-  { value: "CAS Confianza",   label: "CAS Confianza"   },
-  { value: "DC-A1", label: "DC-A1" },
-  { value: "DC-A2", label: "DC-A2" },
-  { value: "DC-A3", label: "DC-A3" },
-  { value: "DC-B1", label: "DC-B1" },
-  { value: "DC-B2", label: "DC-B2" },
-]
+export const CATEGORIA_REGIMEN = {
+  // Administrativo nombrado → DL 276
+  "Nombrado-Administrativo": {
+    label:   "Régimen D.L. 276",
+    value:   "DL 276",
+    opciones: [
+      { value: "Profesional", label: "Profesional" },
+      { value: "Técnico",     label: "Técnico"     },
+      { value: "Auxiliar",    label: "Auxiliar"    },
+    ],
+    campo: "regimen_dl276",
+    mostrarNivel:      true,
+    mostrarDedicacion: false,
+  },
+  // Administrativo contratado → CAS
+  "Contratado-Administrativo": {
+    label:   "Régimen D.L. 1057 (CAS)",
+    value:   "CAS",
+    opciones: [
+      { value: "CAS Permanente",  label: "CAS Permanente"  },
+      { value: "CAS Determinado", label: "CAS Determinado" },
+      { value: "CAS Confianza",   label: "CAS Confianza"   },
+    ],
+    campo: "regimen_cas",
+    mostrarNivel:      false,
+    mostrarDedicacion: false,
+  },
+  // Docente nombrado → Ordinario
+  "Nombrado-Docente": {
+    label:   "Régimen Ordinario",
+    value:   "Ordinario",
+    opciones: [
+      { value: "Principal", label: "Principal" },
+      { value: "Asociado",  label: "Asociado"  },
+      { value: "Auxiliar",  label: "Auxiliar"  },
+      { value: "JP",        label: "JP"        },
+    ],
+    campo: "regimen_ordinario",
+    mostrarNivel:      false,
+    mostrarDedicacion: true,
+  },
+  // Docente contratado → Contratado
+  "Contratado-Docente": {
+    label:   "Régimen Contratado",
+    value:   "Contratado",
+    opciones: [
+      { value: "DC-A1", label: "DC-A1" },
+      { value: "DC-A2", label: "DC-A2" },
+      { value: "DC-A3", label: "DC-A3" },
+      { value: "DC-B1", label: "DC-B1" },
+      { value: "DC-B2", label: "DC-B2" },
+      { value: "DC-B3", label: "DC-B3" },
+    ],
+    campo: "regimen_contratado",
+    mostrarNivel:      false,
+    mostrarDedicacion: true,
+  },
+}
 
 export const NIVEL_REMUNERATIVO = [
   { value: "A", label: "Nivel A" },
@@ -94,6 +134,17 @@ export const NIVEL_REMUNERATIVO = [
   { value: "D", label: "Nivel D" },
   { value: "E", label: "Nivel E" },
   { value: "F", label: "Nivel F" },
+]
+
+export const NIVEL_RENACYT = [
+  { value: "I",                       label: "Nivel I"                       },
+  { value: "II",                      label: "Nivel II"                      },
+  { value: "III",                     label: "Nivel III"                     },
+  { value: "IV",                      label: "Nivel IV"                      },
+  { value: "V",                       label: "Nivel V"                       },
+  { value: "VI",                      label: "Nivel VI"                      },
+  { value: "VII",                     label: "Nivel VII"                     },
+  { value: "Investigador Distinguido", label: "Investigador Distinguido"      },
 ]
 
 export const DEDICACION = [
