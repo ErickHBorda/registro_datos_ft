@@ -1,12 +1,12 @@
 // Layout principal del formulario multi-paso
 
-import { useRef }              from "react"
-import { Toaster, toast }      from "react-hot-toast"
-import { useFicha }            from "../hooks/useFicha"
+import { useRef, useState } from "react"
+import { Toaster, toast } from "react-hot-toast"
+import { useFicha } from "../hooks/useFicha"
 import { personalService, fotosService } from "../services/api"
-import { PASOS_FICHA }         from "../utils/constants"
-import Stepper                 from "../components/ui/Stepper"
-import NavButtons              from "../components/ui/NavButtons"
+import { PASOS_FICHA } from "../utils/constants"
+import Stepper from "../components/ui/Stepper"
+import NavButtons from "../components/ui/NavButtons"
 import Step1Personal from "../components/steps/Step1Personal"
 import Step2Laboral from "../components/steps/Step2Laboral"
 import Step3Familiares from "../components/steps/Step3Familiares"
@@ -14,6 +14,7 @@ import Step4Formacion from "../components/steps/Step4Formacion"
 import Step5Experiencia from "../components/steps/Step5Experiencia"
 import Step6Otros from "../components/steps/Step6Otros"
 import Step7Revision from "../components/steps/Step7Revision"
+import ModalConfirmacion from "../components/ui/ModalConfirmacion"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -46,62 +47,63 @@ export default function FormularioPage() {
   const scrollTop = () =>
     topRef.current?.scrollIntoView({ behavior: "smooth" })
 
+  const [modalVisible, setModalVisible] = useState(false)
+
   // ── Navegación con scroll ─────────────────────────────────
   const handleSiguiente = () => {
     siguientePaso()
     scrollTop()
   }
-  const handleAnterior  = () => { pasoAnterior();  scrollTop() }
-  const handleIrAlPaso  = (n) => { irAlPaso(n);    scrollTop() }
+  const handleAnterior = () => { pasoAnterior(); scrollTop() }
+  const handleIrAlPaso = (n) => { irAlPaso(n); scrollTop() }
 
   // ── Envío final ───────────────────────────────────────────
-  const handleEnviar = async () => {
-    // Verificar campos mínimos obligatorios
+  const handleEnviar = () => {
+    // Validar campos mínimos antes de abrir el modal
     const p = ficha.personal
     if (!p.dni || !p.nombres || !p.apellido_paterno ||
-        !p.celular || !p.email_personal_1 || !p.dom_direccion) {
+      !p.celular || !p.email_personal_1 || !p.dom_direccion) {
       toast.error("Complete los campos obligatorios del Paso 1 antes de enviar")
       return
     }
-
     const l = ficha.datos_laborales
     if (!l.dependencia || !l.cargo || !l.email_institucional ||
-        !l.condicion || !l.tipo_personal) {
+      !l.condicion || !l.tipo_personal) {
       toast.error("Complete los campos obligatorios del Paso 2 antes de enviar")
       return
     }
+    // Abrir modal
+    setModalVisible(true)
+  }
 
+  // ── Envío real tras confirmar en el modal ─────────────────
+  const handleConfirmar = async () => {
     setCargando(true)
-
     try {
-      // ── 1. Preparar payload limpio ───────────────────────
       const payload = prepararPayload()
-
-      // ── 2. Crear el registro completo ────────────────────
       const respuesta = await personalService.crear(payload)
-      const nuevoId   = respuesta.personal.id
+      const nuevoId = respuesta.personal.id
 
-      // ── 3. Subir foto si el usuario seleccionó una ───────
+      // Subir foto si existe
       const archivoFoto = ficha.personal._foto_archivo
       if (archivoFoto && nuevoId) {
         try {
           await fotosService.subir(nuevoId, archivoFoto)
-        } catch (errorFoto) {
-          // La foto falla silenciosamente — el registro ya fue creado
+        } catch {
           toast("Ficha guardada. La foto no pudo subirse — puede actualizarla después.",
             { icon: "⚠️", duration: 5000 })
         }
       }
 
-      // ── 4. Marcar como completado ────────────────────────
+      setModalVisible(false)
       setPersonalId(nuevoId)
       setCompletado(true)
       toast.success("¡Ficha registrada correctamente!")
 
     } catch (error) {
-      // Manejo específico de error de DNI duplicado
       if (error.message?.includes("DNI")) {
         toast.error(`DNI ya registrado: ${ficha.personal.dni}`)
+        setModalVisible(false)
         irAlPaso(1)
       } else {
         toast.error(error.message || "Error al enviar la ficha")
@@ -122,9 +124,9 @@ export default function FormularioPage() {
           <div className="w-20 h-20 rounded-full bg-green-100 flex items-center
                           justify-center mx-auto">
             <svg className="w-10 h-10 text-green-500" fill="none"
-                 viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M5 13l4 4L19 7" />
+                d="M5 13l4 4L19 7" />
             </svg>
           </div>
 
@@ -216,22 +218,22 @@ export default function FormularioPage() {
     switch (pasoActual) {
       case 1: return (
         <Step1Personal
-            datos={ficha.personal}
-            onChange={actualizarCampo}
+          datos={ficha.personal}
+          onChange={actualizarCampo}
         />
       )
       case 2: return (
         <Step2Laboral
-            datos={ficha.datos_laborales}
-            onChange={actualizarCampo}
+          datos={ficha.datos_laborales}
+          onChange={actualizarCampo}
         />
       )
       case 3: return (
         <Step3Familiares
-            datos={ficha.familiares}
-            onChange={(seccion, campo, valor) =>
+          datos={ficha.familiares}
+          onChange={(seccion, campo, valor) =>
             actualizarSeccion("familiares", valor)
-            }
+          }
         />
       )
       case 4: return (
@@ -342,6 +344,14 @@ export default function FormularioPage() {
         />
 
       </main>
+      {/* ── Modal de confirmación ──────────────────────── */}
+      <ModalConfirmacion
+        visible={modalVisible}
+        onConfirmar={handleConfirmar}
+        onCancelar={() => !cargando && setModalVisible(false)}
+        cargando={cargando}
+        ficha={ficha}
+      />
     </div>
   )
 }
