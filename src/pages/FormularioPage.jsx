@@ -3,7 +3,7 @@
 import { useRef }              from "react"
 import { Toaster, toast }      from "react-hot-toast"
 import { useFicha }            from "../hooks/useFicha"
-import { personalService }     from "../services/api"
+import { personalService, fotosService } from "../services/api"
 import { PASOS_FICHA }         from "../utils/constants"
 import Stepper                 from "../components/ui/Stepper"
 import NavButtons              from "../components/ui/NavButtons"
@@ -53,15 +53,56 @@ export default function FormularioPage() {
 
   // ── Envío final ───────────────────────────────────────────
   const handleEnviar = async () => {
+    // Verificar campos mínimos obligatorios
+    const p = ficha.personal
+    if (!p.dni || !p.nombres || !p.apellido_paterno ||
+        !p.celular || !p.email_personal_1 || !p.dom_direccion) {
+      toast.error("Complete los campos obligatorios del Paso 1 antes de enviar")
+      return
+    }
+
+    const l = ficha.datos_laborales
+    if (!l.dependencia || !l.cargo || !l.email_institucional ||
+        !l.condicion || !l.tipo_personal) {
+      toast.error("Complete los campos obligatorios del Paso 2 antes de enviar")
+      return
+    }
+
     setCargando(true)
+
     try {
-      const payload  = prepararPayload()
+      // ── 1. Preparar payload limpio ───────────────────────
+      const payload = prepararPayload()
+
+      // ── 2. Crear el registro completo ────────────────────
       const respuesta = await personalService.crear(payload)
-      setPersonalId(respuesta.personal.id)
+      const nuevoId   = respuesta.personal.id
+
+      // ── 3. Subir foto si el usuario seleccionó una ───────
+      const archivoFoto = ficha.personal._foto_archivo
+      if (archivoFoto && nuevoId) {
+        try {
+          await fotosService.subir(nuevoId, archivoFoto)
+        } catch (errorFoto) {
+          // La foto falla silenciosamente — el registro ya fue creado
+          toast("Ficha guardada. La foto no pudo subirse — puede actualizarla después.",
+            { icon: "⚠️", duration: 5000 })
+        }
+      }
+
+      // ── 4. Marcar como completado ────────────────────────
+      setPersonalId(nuevoId)
       setCompletado(true)
       toast.success("¡Ficha registrada correctamente!")
+
     } catch (error) {
-      toast.error(error.message || "Error al enviar la ficha")
+      // Manejo específico de error de DNI duplicado
+      if (error.message?.includes("DNI")) {
+        toast.error(`DNI ya registrado: ${ficha.personal.dni}`)
+        irAlPaso(1)
+      } else {
+        toast.error(error.message || "Error al enviar la ficha")
+      }
     } finally {
       setCargando(false)
     }
@@ -70,8 +111,11 @@ export default function FormularioPage() {
   // ── Pantalla de éxito ─────────────────────────────────────
   if (completado) {
     return (
-      <div className="min-h-screen bg-unamba-light flex items-center justify-center p-4">
+      <div className="min-h-screen bg-unamba-light flex items-center
+                      justify-center p-4">
         <div className="form-card max-w-md w-full text-center space-y-5">
+
+          {/* Ícono de éxito animado */}
           <div className="w-20 h-20 rounded-full bg-green-100 flex items-center
                           justify-center mx-auto">
             <svg className="w-10 h-10 text-green-500" fill="none"
@@ -80,24 +124,85 @@ export default function FormularioPage() {
                     d="M5 13l4 4L19 7" />
             </svg>
           </div>
+
           <div>
             <h2 className="text-xl font-bold text-slate-800">
               ¡Ficha registrada con éxito!
             </h2>
-            <p className="text-sm text-slate-500 mt-2">
+            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
               Sus datos han sido guardados correctamente en el sistema
               de la Oficina de Recursos Humanos de la UNAMBA.
             </p>
           </div>
-          <div className="bg-slate-50 rounded-lg p-3 text-xs text-slate-500">
-            Guarde este número de registro para futuras consultas
+
+          {/* Número de registro */}
+          {personalId && (
+            <div className="bg-primary-50 border border-primary-200
+                            rounded-lg p-4 space-y-1">
+              <p className="text-xs text-primary-600 font-semibold uppercase tracking-wide">
+                Número de Registro
+              </p>
+              <p className="text-3xl font-black text-primary-700">
+                #{String(personalId).padStart(5, "0")}
+              </p>
+              <p className="text-xs text-slate-400">
+                Guarde este número para futuras consultas
+              </p>
+            </div>
+          )}
+
+          {/* Datos del registrado */}
+          <div className="bg-slate-50 rounded-lg p-3 text-left space-y-1.5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+              Datos registrados
+            </p>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-400">Nombre</span>
+              <span className="font-medium text-slate-700">
+                {ficha.personal.apellido_paterno} {ficha.personal.apellido_materno},
+                {" "}{ficha.personal.nombres}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-400">DNI</span>
+              <span className="font-medium text-slate-700">{ficha.personal.dni}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-400">Cargo</span>
+              <span className="font-medium text-slate-700">
+                {ficha.datos_laborales.cargo || "—"}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-400">Dependencia</span>
+              <span className="font-medium text-slate-700 text-right max-w-[200px]">
+                {ficha.datos_laborales.dependencia || "—"}
+              </span>
+            </div>
           </div>
-          <button
-            onClick={resetFicha}
-            className="btn-secondary w-full justify-center"
-          >
-            Registrar otro trabajador
-          </button>
+
+          {/* Declaración jurada */}
+          <p className="text-xs text-slate-400 italic leading-relaxed">
+            Información registrada bajo juramento conforme a la
+            Ley N° 27444 — Ley de Procedimiento Administrativo General.
+          </p>
+
+          {/* Acciones */}
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              onClick={resetFicha}
+              className="btn-primary w-full justify-center"
+            >
+              Registrar otro trabajador
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="btn-secondary w-full justify-center"
+            >
+              Imprimir constancia
+            </button>
+          </div>
+
         </div>
       </div>
     )

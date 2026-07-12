@@ -186,3 +186,4 @@ export function useFicha() {
     resetFicha,
   }
 }
+export { ESTADO_INICIAL }
