@@ -13,6 +13,7 @@ import Step3Familiares from "../components/steps/Step3Familiares"
 import Step4Formacion from "../components/steps/Step4Formacion"
 import Step5Experiencia from "../components/steps/Step5Experiencia"
 import Step6Otros from "../components/steps/Step6Otros"
+import Step7Revision from "../components/steps/Step7Revision"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -162,7 +163,12 @@ export default function FormularioPage() {
           }
         />
       )
-      case 7: return <PasoPlaceholder numero={7} titulo="Revisión Final" />
+      case 7: return (
+        <Step7Revision
+          ficha={ficha}
+          onIrAlPaso={handleIrAlPaso}
+        />
+      )
       default: return null
     }
   }
