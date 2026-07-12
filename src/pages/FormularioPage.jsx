@@ -47,7 +47,10 @@ export default function FormularioPage() {
     topRef.current?.scrollIntoView({ behavior: "smooth" })
 
   // ── Navegación con scroll ─────────────────────────────────
-  const handleSiguiente = () => { siguientePaso(); scrollTop() }
+  const handleSiguiente = () => {
+    siguientePaso()
+    scrollTop()
+  }
   const handleAnterior  = () => { pasoAnterior();  scrollTop() }
   const handleIrAlPaso  = (n) => { irAlPaso(n);    scrollTop() }
 

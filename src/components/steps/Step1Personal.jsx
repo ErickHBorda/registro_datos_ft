@@ -6,9 +6,81 @@ import {
   SEXO, ESTADO_CIVIL, TIPO_VIVIENDA, GRUPO_SANGUINEO,
   SISTEMA_PENSION, AFP, RAMA_MILITAR, NIVEL_IDIOMA,
 } from "../../utils/constants"
+import { useValidacion } from "../../hooks/useValidacion"
 
 export default function Step1Personal({ datos, onChange }) {
   const [fotoPreview, setFotoPreview] = useState(null)
+
+  // ── Validación en tiempo real ──────────────────────────
+  const { props: vProps, validarTodo, errores } = useValidacion({
+    apellido_paterno: {
+      requerido:        true,
+      mensajeRequerido: "El apellido paterno es obligatorio",
+      minLength:        2,
+    },
+    apellido_materno: {
+      requerido:        true,
+      mensajeRequerido: "El apellido materno es obligatorio",
+      minLength:        2,
+    },
+    nombres: {
+      requerido:        true,
+      mensajeRequerido: "Los nombres son obligatorios",
+      minLength:        2,
+    },
+    dni: {
+      requerido:        true,
+      mensajeRequerido: "El DNI es obligatorio",
+      length:           8,
+      patron:           /^\d{8}$/,
+      mensajePatron:    "El DNI debe tener exactamente 8 dígitos",
+    },
+    sexo: {
+      requerido:        true,
+      mensajeRequerido: "Seleccione el sexo",
+    },
+    fecha_nacimiento: {
+      requerido:        true,
+      mensajeRequerido: "La fecha de nacimiento es obligatoria",
+    },
+    estado_civil: {
+      requerido:        true,
+      mensajeRequerido: "Seleccione el estado civil",
+    },
+    celular: {
+      requerido:        true,
+      mensajeRequerido: "El celular es obligatorio",
+      patron:           /^\d{9}$/,
+      mensajePatron:    "El celular debe tener 9 dígitos",
+    },
+    email_personal_1: {
+      requerido:        true,
+      mensajeRequerido: "El email es obligatorio",
+      patron:           /^[^@]+@[^@]+\.[^@]+$/,
+      mensajePatron:    "Ingrese un email válido",
+    },
+    dom_direccion: {
+      requerido:        true,
+      mensajeRequerido: "La dirección es obligatoria",
+      minLength:        5,
+    },
+    nac_departamento: {
+      requerido:        true,
+      mensajeRequerido: "El departamento es obligatorio",
+    },
+    nac_provincia: {
+      requerido:        true,
+      mensajeRequerido: "La provincia es obligatoria",
+    },
+    nac_distrito: {
+      requerido:        true,
+      mensajeRequerido: "El distrito es obligatorio",
+    },
+    ruc: {
+      patron:        /^\d{11}$/,
+      mensajePatron: "El RUC debe tener 11 dígitos",
+    },
+  })
 
   const set = (campo, valor) => onChange("personal", campo, valor)
 
@@ -93,16 +165,29 @@ export default function Step1Personal({ datos, onChange }) {
             <FieldGrid cols={2}>
               <Input label="Apellido Paterno" required
                 value={datos.apellido_paterno}
-                onChange={(e) => set("apellido_paterno", e.target.value)}
-                placeholder="Ej: Quispe" />
+                placeholder="Ej: Quispe"
+                {...vProps("apellido_paterno", datos.apellido_paterno)}
+                onChange={(e) => {
+                  vProps("apellido_paterno", datos.apellido_paterno).onChange(e)
+                  set("apellido_paterno", e.target.value)
+                }}
+              />
               <Input label="Apellido Materno" required
                 value={datos.apellido_materno}
-                onChange={(e) => set("apellido_materno", e.target.value)}
+                {...vProps("apellido_materno", datos.apellido_materno)}
+                onChange={(e) => {
+                  vProps("apellido_materno", datos.apellido_materno).onChange(e)
+                  set("apellido_materno", e.target.value)
+                }}
                 placeholder="Ej: Mamani" />
             </FieldGrid>
             <Input label="Nombres Completos" required
               value={datos.nombres}
-              onChange={(e) => set("nombres", e.target.value)}
+              {...vProps("nombres", datos.nombres)}
+              onChange={(e) => {
+                vProps("nombres", datos.nombres).onChange(e)
+                set("nombres", e.target.value)
+              }}
               placeholder="Ej: Juan Carlos" />
           </div>
         </div>
@@ -110,7 +195,11 @@ export default function Step1Personal({ datos, onChange }) {
         <FieldGrid cols={3}>
           <Input label="DNI" required maxLength={8}
             value={datos.dni}
-            onChange={(e) => set("dni", e.target.value.replace(/\D/g, ""))}
+            {...vProps("dni", datos.dni)}
+            onChange={(e) => {
+              vProps("dni", datos.dni).onChange(e)
+              set("dni", e.target.value.replace(/\D/g, ""))
+            }}
             placeholder="12345678" />
           <Input label="Libreta Militar"
             value={datos.libreta_militar}
@@ -118,16 +207,28 @@ export default function Step1Personal({ datos, onChange }) {
             placeholder="Opcional" />
           <Select label="Sexo" required opciones={SEXO}
             value={datos.sexo}
-            onChange={(e) => set("sexo", e.target.value)} />
+            {...vProps("sexo", datos.sexo)}
+            onChange={(e) => {
+              vProps("sexo", datos.sexo).onChange(e)
+              set("sexo", e.target.value)
+            }} />
         </FieldGrid>
 
         <FieldGrid cols={2} className="mt-4">
           <Input label="Fecha de Nacimiento" required type="date"
             value={datos.fecha_nacimiento}
-            onChange={(e) => set("fecha_nacimiento", e.target.value)} />
+            {...vProps("fecha_nacimiento", datos.fecha_nacimiento)}
+            onChange={(e) => {
+              vProps("fecha_nacimiento", datos.fecha_nacimiento).onChange(e)
+              set("fecha_nacimiento", e.target.value)
+            }} />
           <Select label="Estado Civil" required opciones={ESTADO_CIVIL}
             value={datos.estado_civil}
-            onChange={(e) => set("estado_civil", e.target.value)} />
+            {...vProps("estado_civil", datos.estado_civil)}
+            onChange={(e) => {
+              vProps("estado_civil", datos.estado_civil).onChange(e)
+              set("estado_civil", e.target.value)
+            }} />
         </FieldGrid>
       </div>
 
@@ -137,19 +238,32 @@ export default function Step1Personal({ datos, onChange }) {
         <FieldGrid cols={2}>
           <Input label="País" required
             value={datos.nac_pais}
-            onChange={(e) => set("nac_pais", e.target.value)} />
+            {...vProps("nac_pais", datos.nac_pais)}
+            onChange={(e) => {
+              vProps("nac_pais", datos.nac_pais).onChange(e)
+              set("nac_pais", e.target.value)
+            }} />
           <Input label="Departamento" required
             value={datos.nac_departamento}
-            onChange={(e) => set("nac_departamento", e.target.value)}
-            placeholder="Ej: Apurímac" />
+            {...vProps("nac_departamento", datos.nac_departamento)}
+            onChange={(e) => {
+              vProps("nac_departamento", datos.nac_departamento).onChange(e)
+              set("nac_departamento", e.target.value)
+            }} />
           <Input label="Provincia" required
             value={datos.nac_provincia}
-            onChange={(e) => set("nac_provincia", e.target.value)}
-            placeholder="Ej: Abancay" />
+            {...vProps("nac_provincia", datos.nac_provincia)}
+            onChange={(e) => {
+              vProps("nac_provincia", datos.nac_provincia).onChange(e)
+              set("nac_provincia", e.target.value)
+            }} />
           <Input label="Distrito" required
             value={datos.nac_distrito}
-            onChange={(e) => set("nac_distrito", e.target.value)}
-            placeholder="Ej: Abancay" />
+            {...vProps("nac_distrito", datos.nac_distrito)}
+            onChange={(e) => {
+              vProps("nac_distrito", datos.nac_distrito).onChange(e)
+              set("nac_distrito", e.target.value)
+            }} />
         </FieldGrid>
       </div>
 
@@ -159,15 +273,27 @@ export default function Step1Personal({ datos, onChange }) {
         <FieldGrid cols={2}>
           <Input label="Teléfono Fijo"
             value={datos.telefono_fijo}
-            onChange={(e) => set("telefono_fijo", e.target.value.replace(/\D/g, ""))}
+            {...vProps("telefono_fijo", datos.telefono_fijo)}
+            onChange={(e) => {
+              vProps("telefono_fijo", datos.telefono_fijo).onChange(e)
+              set("telefono_fijo", e.target.value.replace(/\D/g, ""))
+            }}
             placeholder="Ej: 083-321456" maxLength={9} />
           <Input label="Celular" required maxLength={9}
             value={datos.celular}
-            onChange={(e) => set("celular", e.target.value.replace(/\D/g, ""))}
+            {...vProps("celular", datos.celular)}
+            onChange={(e) => {
+              vProps("celular", datos.celular).onChange(e)
+              set("celular", e.target.value.replace(/\D/g, ""))
+            }}
             placeholder="Ej: 987654321" />
           <Input label="Email Personal 1" required type="email"
             value={datos.email_personal_1}
-            onChange={(e) => set("email_personal_1", e.target.value)}
+            {...vProps("email_personal_1", datos.email_personal_1)}
+            onChange={(e) => {
+              vProps("email_personal_1", datos.email_personal_1).onChange(e)
+              set("email_personal_1", e.target.value)
+            }}
             placeholder="correo@gmail.com" />
           <Input label="Email Personal 2" type="email"
             value={datos.email_personal_2}
@@ -191,7 +317,11 @@ export default function Step1Personal({ datos, onChange }) {
           <div className="sm:col-span-2">
             <Input label="Dirección" required
               value={datos.dom_direccion}
-              onChange={(e) => set("dom_direccion", e.target.value)}
+              {...vProps("dom_direccion", datos.dom_direccion)}
+              onChange={(e) => {
+                vProps("dom_direccion", datos.dom_direccion).onChange(e)
+                set("dom_direccion", e.target.value)
+              }}
               placeholder="Ej: Av. Arenas 123" />
           </div>
         </FieldGrid>
@@ -202,7 +332,11 @@ export default function Step1Personal({ datos, onChange }) {
             placeholder="Ej: Frente al parque" />
           <Select label="Tipo de Vivienda" opciones={TIPO_VIVIENDA}
             value={datos.tipo_vivienda}
-            onChange={(e) => set("tipo_vivienda", e.target.value)} />
+            {...vProps("tipo_vivienda", datos.tipo_vivienda)}
+            onChange={(e) => {
+              vProps("tipo_vivienda", datos.tipo_vivienda).onChange(e)
+              set("tipo_vivienda", e.target.value)
+            }} />
         </FieldGrid>
       </div>
 
@@ -212,7 +346,11 @@ export default function Step1Personal({ datos, onChange }) {
         <FieldGrid cols={3}>
           <Input label="RUC" maxLength={11}
             value={datos.ruc}
-            onChange={(e) => set("ruc", e.target.value.replace(/\D/g, ""))}
+            {...vProps("ruc", datos.ruc)}
+            onChange={(e) => {
+              vProps("ruc", datos.ruc).onChange(e)
+              set("ruc", e.target.value.replace(/\D/g, ""))
+            }}
             placeholder="20123456789" />
           <Input label="Licencia de Conducir"
             value={datos.licencia_conducir}

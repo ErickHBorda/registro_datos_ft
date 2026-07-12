@@ -1,7 +1,5 @@
-// Componentes reutilizables de formulario con manejo de errores integrado
-
 import { forwardRef } from "react"
-import { AlertCircle, ChevronDown } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronDown } from "lucide-react"
 
 // ── Mensaje de error ───────────────────────────────────────
 export function ErrorMsg({ mensaje }) {
@@ -14,44 +12,99 @@ export function ErrorMsg({ mensaje }) {
   )
 }
 
+// ── Label con indicador de estado ──────────────────────────
+function FieldLabel({ label, required, valido, tocado, error }) {
+  if (!label) return null
+
+  const mostrarCheck = valido && tocado && !error
+  const mostrarError = !!error && tocado
+
+  return (
+    <label className="flex items-center gap-1.5 mb-1">
+      <span className={`input-label mb-0
+        ${mostrarError ? "text-red-500" :
+          mostrarCheck ? "text-green-600" : ""}
+        ${required ? "input-label-required" : ""}
+      `}>
+        {label}
+      </span>
+      {mostrarCheck && (
+        <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+      )}
+    </label>
+  )
+}
+
 // ── Input de texto ─────────────────────────────────────────
 export const Input = forwardRef(function Input(
-  { label, error, required, className = "", ...props },
+  {
+    label, error, required, className = "",
+    valido, tocado,
+    ...props
+  },
   ref
 ) {
+  const mostrarError = !!error && tocado
+  const mostrarOk    = valido && tocado && !error
+
   return (
     <div className={`space-y-0.5 ${className}`}>
-      {label && (
-        <label className={`input-label ${required ? "input-label-required" : ""}`}>
-          {label}
-        </label>
-      )}
-      <input
-        ref={ref}
-        className={error ? "input-field-error" : "input-field"}
-        {...props}
+      <FieldLabel
+        label={label} required={required}
+        valido={valido} tocado={tocado} error={mostrarError ? error : null}
       />
-      <ErrorMsg mensaje={error} />
+      <div className="relative">
+        <input
+          ref={ref}
+          className={`
+            ${mostrarError ? "input-field-error" :
+              mostrarOk    ? "input-field border-green-400 focus:ring-green-400" :
+                             "input-field"}
+            ${mostrarOk ? "pr-7" : ""}
+          `}
+          {...props}
+        />
+        {mostrarOk && (
+          <CheckCircle2
+            size={14}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2
+                       text-green-500 pointer-events-none"
+          />
+        )}
+      </div>
+      {mostrarError && <ErrorMsg mensaje={error} />}
     </div>
   )
 })
 
 // ── Select ────────────────────────────────────────────────
 export const Select = forwardRef(function Select(
-  { label, error, required, opciones = [], placeholder = "Seleccione...", className = "", ...props },
+  {
+    label, error, required, opciones = [],
+    placeholder = "Seleccione...", className = "",
+    valido, tocado,
+    ...props
+  },
   ref
 ) {
+  const mostrarError = !!error && tocado
+  const mostrarOk    = valido && tocado && !error
+
   return (
     <div className={`space-y-0.5 ${className}`}>
-      {label && (
-        <label className={`input-label ${required ? "input-label-required" : ""}`}>
-          {label}
-        </label>
-      )}
+      <FieldLabel
+        label={label} required={required}
+        valido={valido} tocado={tocado} error={mostrarError ? error : null}
+      />
       <div className="relative">
         <select
           ref={ref}
-          className={`${error ? "input-field-error" : "input-field"} appearance-none pr-8`}
+          className={`
+            ${mostrarError ? "input-field-error" :
+              mostrarOk    ? "input-field border-green-400 focus:ring-green-400" :
+                             "input-field"}
+            appearance-none pr-8
+          `}
           {...props}
         >
           <option value="">{placeholder}</option>
@@ -61,12 +114,15 @@ export const Select = forwardRef(function Select(
             </option>
           ))}
         </select>
-        <ChevronDown
-          size={14}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-        />
+        <div className="absolute right-2.5 top-1/2 -translate-y-1/2
+                        flex items-center gap-1 pointer-events-none">
+          {mostrarOk && (
+            <CheckCircle2 size={12} className="text-green-500" />
+          )}
+          <ChevronDown size={14} className="text-slate-400" />
+        </div>
       </div>
-      <ErrorMsg mensaje={error} />
+      {mostrarError && <ErrorMsg mensaje={error} />}
     </div>
   )
 })
@@ -93,23 +149,31 @@ export function Checkbox({ label, error, className = "", ...props }) {
 
 // ── Textarea ───────────────────────────────────────────────
 export const Textarea = forwardRef(function Textarea(
-  { label, error, required, rows = 3, className = "", ...props },
+  { label, error, required, rows = 3, className = "",
+    valido, tocado, ...props },
   ref
 ) {
+  const mostrarError = !!error && tocado
+  const mostrarOk    = valido && tocado && !error
+
   return (
     <div className={`space-y-0.5 ${className}`}>
-      {label && (
-        <label className={`input-label ${required ? "input-label-required" : ""}`}>
-          {label}
-        </label>
-      )}
+      <FieldLabel
+        label={label} required={required}
+        valido={valido} tocado={tocado} error={mostrarError ? error : null}
+      />
       <textarea
         ref={ref}
         rows={rows}
-        className={`${error ? "input-field-error" : "input-field"} resize-none`}
+        className={`
+          ${mostrarError ? "input-field-error" :
+            mostrarOk    ? "input-field border-green-400 focus:ring-green-400" :
+                           "input-field"}
+          resize-none
+        `}
         {...props}
       />
-      <ErrorMsg mensaje={error} />
+      {mostrarError && <ErrorMsg mensaje={error} />}
     </div>
   )
 })
