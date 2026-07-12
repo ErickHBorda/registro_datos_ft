@@ -5,6 +5,7 @@ import {
 } from "lucide-react"
 import { Input, Select, Checkbox, SectionTitle, FieldGrid } from "../ui/FormField"
 import { TIPO_PERSONAL } from "../../utils/constants"
+import { useValidacion } from "../../hooks/useValidacion"
 
 // ── Reconocimiento vacío ───────────────────────────────────
 const RECONOCIMIENTO_VACIO = (orden) => ({
@@ -15,11 +16,47 @@ const RECONOCIMIENTO_VACIO = (orden) => ({
     orden,
 })
 
+// ── Reglas de validación para reconocimientos ──────────────
+const reglasReconocimiento = {
+    nombre_entidad: {
+        requerido: true,
+        minLength: 2,
+        mensajeRequerido: "Nombre de la entidad es obligatorio",
+    },
+    tipo_reconocimiento: {
+        requerido: true,
+        minLength: 2,
+        mensajeRequerido: "Tipo de reconocimiento es obligatorio",
+    },
+}
+
+// ── Reglas de validación para otras instituciones ──────────
+const reglasOtrasInstituciones = {
+    nombre_entidad: {
+        requerido: true,
+        minLength: 2,
+        mensajeRequerido: "Nombre de la entidad es obligatorio",
+    },
+    tipo_personal: {
+        requerido: true,
+        mensajeRequerido: "Tipo de personal es obligatorio",
+    },
+}
+
 // ── Card colapsable para reconocimientos ───────────────────
 function ReconocimientoCard({ item, index, onActualizar, onEliminar }) {
     const [expandido, setExpandido] = useState(true)
 
+    // ── Hook de validación en tiempo real ─────────────────
+    const { props: validarProps, validar } = useValidacion(reglasReconocimiento)
+
     const set = (campo, valor) => onActualizar(index, campo, valor)
+
+    // ── Handler genérico que actualiza y valida ───────────
+    const handleChange = (campo, valor) => {
+        set(campo, valor)
+        validar(campo, valor)
+    }
 
     const titulo = item.tipo_reconocimiento || `Reconocimiento ${index + 1}`
     const subtitulo = item.nombre_entidad || "Entidad no definida"
@@ -66,27 +103,29 @@ function ReconocimientoCard({ item, index, onActualizar, onEliminar }) {
                     <div className="sm:col-span-2">
                         <Input
                             label="Nombre de la Entidad que Otorga" required
-                            value={item.nombre_entidad}
-                            onChange={(e) => set("nombre_entidad", e.target.value)}
+                            value={item.nombre_entidad || ""}
+                            {...validarProps("nombre_entidad", item.nombre_entidad)}
+                            onChange={(e) => handleChange("nombre_entidad", e.target.value)}
                             placeholder="Ej: Universidad Nacional Micaela Bastidas"
                         />
                     </div>
                     <Input
                         label="Tipo de Reconocimiento / Felicitación" required
-                        value={item.tipo_reconocimiento}
-                        onChange={(e) => set("tipo_reconocimiento", e.target.value)}
+                        value={item.tipo_reconocimiento || ""}
+                        {...validarProps("tipo_reconocimiento", item.tipo_reconocimiento)}
+                        onChange={(e) => handleChange("tipo_reconocimiento", e.target.value)}
                         placeholder="Ej: Felicitación por labor docente destacada"
                     />
                     <FieldGrid cols={2}>
                         <Input
                             label="Documento que Acredita"
-                            value={item.documento_acredita}
+                            value={item.documento_acredita || ""}
                             onChange={(e) => set("documento_acredita", e.target.value)}
                             placeholder="Ej: Resolución N° 089-2022"
                         />
                         <Input
                             label="Fecha del Documento" type="date"
-                            value={item.fecha_documento}
+                            value={item.fecha_documento || ""}
                             onChange={(e) => set("fecha_documento", e.target.value)}
                         />
                     </FieldGrid>
@@ -104,6 +143,17 @@ export default function Step6Otros({
 
     const set = (campo, valor) =>
         onChangeInstituciones({ ...otrasInstituciones, [campo]: valor })
+
+    // ── Hook de validación para otras instituciones ───────
+    const { props: validarPropsInst, validar: validarInst } = useValidacion(
+        reglasOtrasInstituciones
+    )
+
+    // ── Handler genérico para otras instituciones ─────────
+    const handleChangeInst = (campo, valor) => {
+        set(campo, valor)
+        validarInst(campo, valor)
+    }
 
     // ── Reconocimientos ────────────────────────────────────
     const agregar = () => {
@@ -205,16 +255,18 @@ export default function Step6Otros({
                             <div className="sm:col-span-2">
                                 <Input
                                     label="Nombre de la Entidad" required
-                                    value={otrasInstituciones.nombre_entidad}
-                                    onChange={(e) => set("nombre_entidad", e.target.value)}
+                                    value={otrasInstituciones.nombre_entidad || ""}
+                                    {...validarPropsInst("nombre_entidad", otrasInstituciones.nombre_entidad)}
+                                    onChange={(e) => handleChangeInst("nombre_entidad", e.target.value)}
                                     placeholder="Ej: Universidad Andina del Cusco"
                                 />
                             </div>
                             <Select
                                 label="Tipo de Personal" required
                                 opciones={TIPO_PERSONAL}
-                                value={otrasInstituciones.tipo_personal}
-                                onChange={(e) => set("tipo_personal", e.target.value)}
+                                value={otrasInstituciones.tipo_personal || ""}
+                                {...validarPropsInst("tipo_personal", otrasInstituciones.tipo_personal)}
+                                onChange={(e) => handleChangeInst("tipo_personal", e.target.value)}
                             />
                             <Input
                                 label="Horas Diarias" type="number"

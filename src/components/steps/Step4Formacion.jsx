@@ -8,6 +8,7 @@ import {
     NIVEL_EDUCATIVO, ESTADO_ESTUDIO,
     TIPO_OTRO_ESTUDIO, TIPO_CONSTANCIA,
 } from "../../utils/constants"
+import { useValidacion } from "../../hooks/useValidacion"
 
 // ── Niveles que van en formacion_academica ─────────────────
 const NIVELES_FORMACION = NIVEL_EDUCATIVO.filter((n) =>
@@ -54,6 +55,33 @@ const OTRO_ESTUDIO_VACIO = (tipo, orden) => ({
     tipo_constancia: "",
     orden,
 })
+
+// ── Reglas de validación para formación ────────────────────
+const reglasFormacion = (esBasica) => ({
+    estado: {
+        requerido: true,
+        mensajeRequerido: "Seleccione el estado",
+    },
+    centro_estudios: {
+        requerido: !esBasica,
+        minLength: 2,
+        mensajeRequerido: "Centro de estudios es obligatorio",
+    },
+})
+
+// ── Reglas de validación para otros estudios ───────────────
+const reglasOtroEstudio = {
+    nombre_curso: {
+        requerido: true,
+        minLength: 2,
+        mensajeRequerido: "Nombre del curso es obligatorio",
+    },
+    centro_estudios: {
+        requerido: true,
+        minLength: 2,
+        mensajeRequerido: "Centro de estudios es obligatorio",
+    },
+}
 
 // ── Card colapsable genérica ───────────────────────────────
 function ItemCard({ titulo, subtitulo, onEliminar, children }) {
@@ -109,19 +137,30 @@ function ItemCard({ titulo, subtitulo, onEliminar, children }) {
 function FormFormacion({ item, onActualizar, esBasica }) {
     const set = (campo, valor) => onActualizar(campo, valor)
 
+    // ── Hook de validación en tiempo real ─────────────────
+    const { props: validarProps, validar } = useValidacion(reglasFormacion(esBasica))
+
+    // ── Handler genérico que actualiza y valida ───────────
+    const handleChange = (campo, valor) => {
+        set(campo, valor)
+        validar(campo, valor)
+    }
+
     return (
         <div className="space-y-4">
             <FieldGrid cols={2}>
                 <Select
                     label="Estado" required opciones={ESTADO_ESTUDIO}
                     value={item.estado}
-                    onChange={(e) => set("estado", e.target.value)}
+                    {...validarProps("estado", item.estado)}
+                    onChange={(e) => handleChange("estado", e.target.value)}
                 />
                 {!esBasica && (
                     <Input
                         label="Centro de Estudios" required
                         value={item.centro_estudios}
-                        onChange={(e) => set("centro_estudios", e.target.value)}
+                        {...validarProps("centro_estudios", item.centro_estudios)}
+                        onChange={(e) => handleChange("centro_estudios", e.target.value)}
                         placeholder="Ej: UNMSM"
                     />
                 )}
@@ -171,6 +210,15 @@ function FormFormacion({ item, onActualizar, esBasica }) {
 function FormOtroEstudio({ item, onActualizar }) {
     const set = (campo, valor) => onActualizar(campo, valor)
 
+    // ── Hook de validación en tiempo real ─────────────────
+    const { props: validarProps, validar } = useValidacion(reglasOtroEstudio)
+
+    // ── Handler genérico que actualiza y valida ───────────
+    const handleChange = (campo, valor) => {
+        set(campo, valor)
+        validar(campo, valor)
+    }
+
     return (
         <div className="space-y-4">
             <FieldGrid cols={2}>
@@ -178,14 +226,16 @@ function FormOtroEstudio({ item, onActualizar }) {
                     <Input
                         label="Nombre del Curso / Programa" required
                         value={item.nombre_curso}
-                        onChange={(e) => set("nombre_curso", e.target.value)}
+                        {...validarProps("nombre_curso", item.nombre_curso)}
+                        onChange={(e) => handleChange("nombre_curso", e.target.value)}
                         placeholder="Ej: Diplomado en Gestión Pública"
                     />
                 </div>
                 <Input
                     label="Centro de Estudios" required
                     value={item.centro_estudios}
-                    onChange={(e) => set("centro_estudios", e.target.value)}
+                    {...validarProps("centro_estudios", item.centro_estudios)}
+                    onChange={(e) => handleChange("centro_estudios", e.target.value)}
                     placeholder="Ej: SERVIR, PUCP"
                 />
                 <Input

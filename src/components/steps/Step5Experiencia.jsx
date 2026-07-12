@@ -5,8 +5,9 @@ import {
 } from "lucide-react"
 import { Input, Select, SectionTitle, FieldGrid } from "../ui/FormField"
 import { TIPO_INSTITUCION } from "../../utils/constants"
+import { useValidacion } from "../../hooks/useValidacion"
 
-// ── Registros vacíos ───────────────────────────────────────
+// ── Registros vacíos (sin tiempo_cargo) ───────────────────
 const EXP_LABORAL_VACIA = (tipo, orden) => ({
     tipo_institucion: tipo,
     nombre_entidad: "",
@@ -14,7 +15,6 @@ const EXP_LABORAL_VACIA = (tipo, orden) => ({
     documento_acredita: "",
     fecha_inicio: "",
     fecha_culminacion: "",
-    tiempo_cargo: "",
     orden,
 })
 
@@ -24,9 +24,38 @@ const EXP_DOCENTE_VACIA = (orden) => ({
     documento_acredita: "",
     fecha_inicio: "",
     fecha_culminacion: "",
-    tiempo_cargo: "",
     orden,
 })
+
+// ── Reglas de validación ───────────────────────────────────
+const reglasExpLaboral = {
+    nombre_entidad: {
+        requerido: true,
+        minLength: 2,
+        mensajeRequerido: "Nombre de la entidad es obligatorio",
+    },
+    cargo: {
+        requerido: true,
+        minLength: 2,
+        mensajeRequerido: "Cargo desempeñado es obligatorio",
+    },
+    fecha_inicio: {
+        requerido: true,
+        mensajeRequerido: "Fecha de inicio es obligatoria",
+    },
+}
+
+const reglasExpDocente = {
+    nombre_entidad: {
+        requerido: true,
+        minLength: 2,
+        mensajeRequerido: "Nombre de la entidad es obligatorio",
+    },
+    fecha_inicio: {
+        requerido: true,
+        mensajeRequerido: "Fecha de inicio es obligatoria",
+    },
+}
 
 // ── Calcula tiempo en el cargo automáticamente ─────────────
 function calcularTiempo(fechaInicio, fechaFin) {
@@ -105,6 +134,16 @@ function ExpCard({ titulo, subtitulo, badge, onEliminar, children }) {
 function FormExpLaboral({ item, onActualizar }) {
     const set = (campo, valor) => onActualizar(campo, valor)
 
+    // ── Hook de validación en tiempo real ─────────────────
+    const { props: validarProps, validar } = useValidacion(reglasExpLaboral)
+
+    // ── Handler genérico ──────────────────────────────────
+    const handleChange = (campo, valor) => {
+        set(campo, valor)
+        validar(campo, valor)
+    }
+
+    // ✅ Calcular tiempo en cada render (derivado, no almacenado)
     const tiempo = calcularTiempo(item.fecha_inicio, item.fecha_culminacion)
 
     return (
@@ -113,20 +152,22 @@ function FormExpLaboral({ item, onActualizar }) {
                 <div className="sm:col-span-2">
                     <Input
                         label="Nombre de la Entidad" required
-                        value={item.nombre_entidad}
-                        onChange={(e) => set("nombre_entidad", e.target.value)}
+                        value={item.nombre_entidad || ""}
+                        {...validarProps("nombre_entidad", item.nombre_entidad)}
+                        onChange={(e) => handleChange("nombre_entidad", e.target.value)}
                         placeholder="Ej: Gobierno Regional de Apurímac"
                     />
                 </div>
                 <Input
                     label="Cargo Desempeñado" required
-                    value={item.cargo}
-                    onChange={(e) => set("cargo", e.target.value)}
+                    value={item.cargo || ""}
+                    {...validarProps("cargo", item.cargo)}
+                    onChange={(e) => handleChange("cargo", e.target.value)}
                     placeholder="Ej: Analista de Sistemas"
                 />
                 <Input
                     label="Documento que Acredita"
-                    value={item.documento_acredita}
+                    value={item.documento_acredita || ""}
                     onChange={(e) => set("documento_acredita", e.target.value)}
                     placeholder="Ej: Resolución N° 045-2012"
                 />
@@ -135,19 +176,14 @@ function FormExpLaboral({ item, onActualizar }) {
             <FieldGrid cols={3}>
                 <Input
                     label="Fecha de Inicio" required type="date"
-                    value={item.fecha_inicio}
-                    onChange={(e) => {
-                        set("fecha_inicio", e.target.value)
-                        set("tiempo_cargo", calcularTiempo(e.target.value, item.fecha_culminacion))
-                    }}
+                    value={item.fecha_inicio || ""}
+                    {...validarProps("fecha_inicio", item.fecha_inicio)}
+                    onChange={(e) => handleChange("fecha_inicio", e.target.value)}
                 />
                 <Input
                     label="Fecha de Culminación" type="date"
-                    value={item.fecha_culminacion}
-                    onChange={(e) => {
-                        set("fecha_culminacion", e.target.value)
-                        set("tiempo_cargo", calcularTiempo(item.fecha_inicio, e.target.value))
-                    }}
+                    value={item.fecha_culminacion || ""}
+                    onChange={(e) => set("fecha_culminacion", e.target.value)}
                     placeholder="Dejar vacío si es actual"
                 />
                 <div className="space-y-0.5">
@@ -165,6 +201,15 @@ function FormExpLaboral({ item, onActualizar }) {
 function FormExpDocente({ item, onActualizar }) {
     const set = (campo, valor) => onActualizar(campo, valor)
 
+    // ── Hook de validación en tiempo real ─────────────────
+    const { props: validarProps, validar } = useValidacion(reglasExpDocente)
+
+    const handleChange = (campo, valor) => {
+        set(campo, valor)
+        validar(campo, valor)
+    }
+
+    // ✅ Calcular tiempo en cada render
     const tiempo = calcularTiempo(item.fecha_inicio, item.fecha_culminacion)
 
     return (
@@ -173,20 +218,21 @@ function FormExpDocente({ item, onActualizar }) {
                 <div className="sm:col-span-2">
                     <Input
                         label="Nombre de la Entidad / Universidad" required
-                        value={item.nombre_entidad}
-                        onChange={(e) => set("nombre_entidad", e.target.value)}
+                        value={item.nombre_entidad || ""}
+                        {...validarProps("nombre_entidad", item.nombre_entidad)}
+                        onChange={(e) => handleChange("nombre_entidad", e.target.value)}
                         placeholder="Ej: Universidad Nacional del Cusco"
                     />
                 </div>
                 <Input
                     label="Categoría Docente"
-                    value={item.categoria}
+                    value={item.categoria || ""}
                     onChange={(e) => set("categoria", e.target.value)}
                     placeholder="Ej: Principal, Asociado, Auxiliar"
                 />
                 <Input
                     label="Documento que Acredita"
-                    value={item.documento_acredita}
+                    value={item.documento_acredita || ""}
                     onChange={(e) => set("documento_acredita", e.target.value)}
                     placeholder="Ej: Resolución N° 120-2015"
                 />
@@ -195,19 +241,14 @@ function FormExpDocente({ item, onActualizar }) {
             <FieldGrid cols={3}>
                 <Input
                     label="Fecha de Inicio" required type="date"
-                    value={item.fecha_inicio}
-                    onChange={(e) => {
-                        set("fecha_inicio", e.target.value)
-                        set("tiempo_cargo", calcularTiempo(e.target.value, item.fecha_culminacion))
-                    }}
+                    value={item.fecha_inicio || ""}
+                    {...validarProps("fecha_inicio", item.fecha_inicio)}
+                    onChange={(e) => handleChange("fecha_inicio", e.target.value)}
                 />
                 <Input
                     label="Fecha de Culminación" type="date"
-                    value={item.fecha_culminacion}
-                    onChange={(e) => {
-                        set("fecha_culminacion", e.target.value)
-                        set("tiempo_cargo", calcularTiempo(item.fecha_inicio, e.target.value))
-                    }}
+                    value={item.fecha_culminacion || ""}
+                    onChange={(e) => set("fecha_culminacion", e.target.value)}
                     placeholder="Dejar vacío si es actual"
                 />
                 <div className="space-y-0.5">
@@ -278,7 +319,6 @@ export default function Step5Experiencia({
     onChangeLaboral, onChangeDocente,
 }) {
 
-    // ── Experiencia laboral ────────────────────────────────
     const porTipo = (tipo) => expLaboral
         .map((e, i) => ({ ...e, _index: i }))
         .filter((e) => e.tipo_institucion === tipo)
@@ -299,7 +339,6 @@ export default function Step5Experiencia({
         onChangeLaboral(expLaboral.filter((_, i) => i !== index))
     }
 
-    // ── Experiencia docente ────────────────────────────────
     const expDocenteConIdx = expDocente.map((e, i) => ({ ...e, _index: i }))
 
     const agregarDocente = () => {
@@ -317,7 +356,6 @@ export default function Step5Experiencia({
         onChangeDocente(expDocente.filter((_, i) => i !== index))
     }
 
-    // ── Determinar visibilidad de experiencia docente ──────
     const esDocente = tipoPersonal === "Docente"
     const esAdministrativo = tipoPersonal === "Administrativo"
     const sinDefinir = !tipoPersonal
@@ -325,7 +363,6 @@ export default function Step5Experiencia({
     return (
         <div className="space-y-5">
 
-            {/* ── Aviso si tipo no definido ──────────────────── */}
             {sinDefinir && (
                 <div className="flex items-start gap-3 px-4 py-3 bg-amber-50
                         border border-amber-200 rounded-form">
@@ -337,7 +374,6 @@ export default function Step5Experiencia({
                 </div>
             )}
 
-            {/* ══ EXPERIENCIA LABORAL — ESTATAL ═════════════ */}
             <SeccionExperiencia
                 titulo="Experiencia en Institución Estatal"
                 subtitulo="Máximo 10 registros"
@@ -358,7 +394,6 @@ export default function Step5Experiencia({
                 )}
             />
 
-            {/* ══ EXPERIENCIA LABORAL — PRIVADA ═════════════ */}
             <SeccionExperiencia
                 titulo="Experiencia en Institución Privada"
                 subtitulo="Máximo 10 registros"
@@ -379,8 +414,6 @@ export default function Step5Experiencia({
                 )}
             />
 
-            {/* ══ EXPERIENCIA DOCENTE ════════════════════════ */}
-            {/* Solo docentes — administrativos no necesitan este bloque */}
             {esDocente && (
                 <SeccionExperiencia
                     titulo="Experiencia Docente"
@@ -403,7 +436,6 @@ export default function Step5Experiencia({
                 />
             )}
 
-            {/* Aviso para administrativos */}
             {esAdministrativo && (
                 <div className="flex items-start gap-3 px-4 py-3 bg-slate-50
                         border border-slate-200 rounded-form">

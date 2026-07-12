@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Users, Plus, Trash2, ChevronDown, ChevronUp, UserCheck } from "lucide-react"
 import { Input, Select, Checkbox, SectionTitle, FieldGrid } from "../ui/FormField"
 import { SEXO, PARENTESCO } from "../../utils/constants"
+import { useValidacion } from "../../hooks/useValidacion"
 
 // ── Familiar vacío por defecto ─────────────────────────────
 const FAMILIAR_VACIO = {
@@ -21,9 +22,40 @@ const FAMILIAR_VACIO = {
   vive_con_trabajador: false,
 }
 
+// ── Reglas de validación para un familiar ──────────────────
+const reglasFamiliar = {
+  apellido_paterno: {
+    requerido: true,
+    minLength: 2,
+    mensajeRequerido: "Apellido paterno es obligatorio",
+  },
+  apellido_materno: {
+    requerido: true,
+    minLength: 2,
+    mensajeRequerido: "Apellido materno es obligatorio",
+  },
+  nombres: {
+    requerido: true,
+    minLength: 2,
+    mensajeRequerido: "Nombres son obligatorios",
+  },
+  parentesco: {
+    requerido: true,
+    mensajeRequerido: "Seleccione el parentesco",
+  },
+  dni: {
+    requerido: false,
+    patron: /^\d{8}$/,
+    mensajePatron: "DNI debe tener 8 dígitos",
+  },
+}
+
 // ── Card de un familiar individual ────────────────────────
 function FamiliarCard({ familiar, index, onActualizar, onEliminar }) {
   const [expandido, setExpandido] = useState(true)
+
+  // ── Hook de validación en tiempo real ─────────────────
+  const { props: validarProps, validar } = useValidacion(reglasFamiliar)
 
   const set = (campo, valor) => onActualizar(index, campo, valor)
 
@@ -32,6 +64,12 @@ function FamiliarCard({ familiar, index, onActualizar, onEliminar }) {
     : `Familiar ${index + 1}`
 
   const subtitulo = familiar.parentesco || "Sin parentesco definido"
+
+  // ── Handler genérico que actualiza y valida ───────────
+  const handleChange = (campo, valor) => {
+    set(campo, valor)
+    validar(campo, valor)
+  }
 
   return (
     <div className="border border-slate-200 rounded-form overflow-hidden
@@ -83,19 +121,22 @@ function FamiliarCard({ familiar, index, onActualizar, onEliminar }) {
             <Input
               label="Apellido Paterno" required
               value={familiar.apellido_paterno}
-              onChange={(e) => set("apellido_paterno", e.target.value)}
+              {...validarProps("apellido_paterno", familiar.apellido_paterno)}
+              onChange={(e) => handleChange("apellido_paterno", e.target.value)}
               placeholder="Ej: García"
             />
             <Input
               label="Apellido Materno" required
               value={familiar.apellido_materno}
-              onChange={(e) => set("apellido_materno", e.target.value)}
+              {...validarProps("apellido_materno", familiar.apellido_materno)}
+              onChange={(e) => handleChange("apellido_materno", e.target.value)}
               placeholder="Ej: López"
             />
             <Input
               label="Nombres" required
               value={familiar.nombres}
-              onChange={(e) => set("nombres", e.target.value)}
+              {...validarProps("nombres", familiar.nombres)}
+              onChange={(e) => handleChange("nombres", e.target.value)}
               placeholder="Ej: María"
             />
           </FieldGrid>
@@ -104,12 +145,17 @@ function FamiliarCard({ familiar, index, onActualizar, onEliminar }) {
             <Select
               label="Parentesco" required opciones={PARENTESCO}
               value={familiar.parentesco}
-              onChange={(e) => set("parentesco", e.target.value)}
+              {...validarProps("parentesco", familiar.parentesco)}
+              onChange={(e) => handleChange("parentesco", e.target.value)}
             />
             <Input
               label="DNI" maxLength={8}
               value={familiar.dni}
-              onChange={(e) => set("dni", e.target.value.replace(/\D/g, ""))}
+              {...validarProps("dni", familiar.dni)}
+              onChange={(e) => {
+                const valor = e.target.value.replace(/\D/g, "")
+                handleChange("dni", valor)
+              }}
               placeholder="12345678"
             />
             <Select

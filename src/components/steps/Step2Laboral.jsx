@@ -4,9 +4,106 @@ import {
   CONDICION, TIPO_PERSONAL, DEDICACION,
   CATEGORIA_REGIMEN, NIVEL_REMUNERATIVO, NIVEL_RENACYT,
 } from "../../utils/constants"
+import { useValidacion } from "../../hooks/useValidacion"
 
 export default function Step2Laboral({ datos, onChange }) {
   const set = (campo, valor) => onChange("datos_laborales", campo, valor)
+
+  // ── Hook de validación en tiempo real ─────────────────────
+  const { props: validarProps, validarTodo, validar, marcarTocado } = useValidacion({
+    dependencia: {
+      requerido: true,
+      minLength: 2,
+      mensajeRequerido: "La dependencia es obligatoria",
+    },
+    cargo: {
+      requerido: true,
+      minLength: 2,
+      mensajeRequerido: "El cargo es obligatorio",
+    },
+    email_institucional: {
+      requerido: true,
+      patron: /^[^@]+@[^@]+\.[^@]+$/,
+      mensajeRequerido: "El correo institucional es obligatorio",
+      mensajePatron: "Ingrese un email válido",
+      validar: (valor) => {
+        if (!valor.endsWith("@unamba.edu.pe")) {
+          return "Debe terminar en @unamba.edu.pe"
+        }
+        return true
+      },
+    },
+    condicion: {
+      requerido: true,
+      mensajeRequerido: "La condición es obligatoria",
+    },
+    tipo_personal: {
+      requerido: true,
+      mensajeRequerido: "El tipo de personal es obligatorio",
+    },
+    fecha_ingreso: {
+      requerido: true,
+      mensajeRequerido: "La fecha de ingreso es obligatoria",
+    },
+    categoria_regimen: {
+      requerido: true,
+      mensajeRequerido: "Seleccione una categoría del régimen",
+      validar: (valor) => {
+        // Solo validar si existe un configRegimen activo
+        if (!datos.condicion || !datos.tipo_personal) return true
+        if (!valor) return "Seleccione una categoría del régimen laboral"
+        return true
+      },
+    },
+    nivel_remunerativo: {
+      requerido: false,
+      validar: (valor) => {
+        // Obligatorio solo si el régimen es DL 276
+        if (datos.categoria_regimen === "DL 276" && !valor) {
+          return "Nivel remunerativo obligatorio para DL 276"
+        }
+        return true
+      },
+    },
+    dedicacion: {
+      requerido: false,
+      validar: (valor) => {
+        // Obligatorio solo si es docente
+        if (datos.tipo_personal === "Docente" && !valor) {
+          return "La dedicación es obligatoria para docentes"
+        }
+        return true
+      },
+    },
+    horas_semanales: {
+      requerido: false,
+      validar: (valor) => {
+        // Obligatorio solo si dedicación es "Horas"
+        if (datos.dedicacion === "Horas" && (!valor || valor < 1)) {
+          return "Ingrese las horas semanales"
+        }
+        return true
+      },
+    },
+    renacyt_codigo: {
+      requerido: false,
+      validar: (valor) => {
+        if (datos.es_renacyt && !valor?.trim()) {
+          return "El código RENACYT es obligatorio"
+        }
+        return true
+      },
+    },
+    renacyt_nivel: {
+      requerido: false,
+      validar: (valor) => {
+        if (datos.es_renacyt && !valor) {
+          return "El nivel RENACYT es obligatorio"
+        }
+        return true
+      },
+    },
+  })
 
   // ── Determinar configuración de régimen según condición+tipo
   const claveRegimen = datos.condicion && datos.tipo_personal
@@ -32,11 +129,14 @@ export default function Step2Laboral({ datos, onChange }) {
   const handleCondicion = (valor) => {
     set("condicion", valor)
     limpiarRegimen()
+    // Marcar como tocado y validar
+    validar("condicion", valor)
   }
 
   const handleTipoPersonal = (valor) => {
     set("tipo_personal", valor)
     limpiarRegimen()
+    validar("tipo_personal", valor)
     // Limpiar RENACYT si cambia a administrativo
     if (valor === "Administrativo") {
       set("es_renacyt",    false)
@@ -60,6 +160,7 @@ export default function Step2Laboral({ datos, onChange }) {
     // Setear el correcto y la categoría
     onChange("datos_laborales", configRegimen.campo,   valor)
     onChange("datos_laborales", "categoria_regimen",   configRegimen.value)
+    validar("categoria_regimen", configRegimen.value)
   }
 
   const esDocente = datos.tipo_personal === "Docente"
@@ -79,29 +180,35 @@ export default function Step2Laboral({ datos, onChange }) {
             <Input
               label="Dependencia / Unidad Orgánica" required
               value={datos.dependencia}
-              onChange={(e) => set("dependencia", e.target.value)}
+              {...validarProps("dependencia", datos.dependencia)}
+              onChange={(e) => {
+                set("dependencia", e.target.value)
+                validarProps("dependencia", e.target.value).onChange(e)
+              }}
               placeholder="Ej: Facultad de Ingeniería"
             />
           </div>
           <Input
             label="Cargo que Desempeña" required
             value={datos.cargo}
-            onChange={(e) => set("cargo", e.target.value)}
+            {...validarProps("cargo", datos.cargo)}
+            onChange={(e) => {
+              set("cargo", e.target.value)
+              validarProps("cargo", e.target.value).onChange(e)
+            }}
             placeholder="Ej: Docente Ordinario"
           />
           <Input
             label="Correo Institucional" required type="email"
             value={datos.email_institucional}
-            onChange={(e) => set("email_institucional", e.target.value)}
+            {...validarProps("email_institucional", datos.email_institucional)}
+            onChange={(e) => {
+              set("email_institucional", e.target.value)
+              validarProps("email_institucional", e.target.value).onChange(e)
+            }}
             placeholder="usuario@unamba.edu.pe"
           />
         </FieldGrid>
-        {datos.email_institucional &&
-         !datos.email_institucional.endsWith("@unamba.edu.pe") && (
-          <p className="input-error-msg mt-2">
-            El correo debe terminar en @unamba.edu.pe
-          </p>
-        )}
       </div>
 
       {/* ══ 2. CONDICIÓN Y TIPO ════════════════════════════ */}
@@ -115,12 +222,18 @@ export default function Step2Laboral({ datos, onChange }) {
           <Select
             label="Condición" required opciones={CONDICION}
             value={datos.condicion}
-            onChange={(e) => handleCondicion(e.target.value)}
+            {...validarProps("condicion", datos.condicion)}
+            onChange={(e) => {
+              handleCondicion(e.target.value)
+            }}
           />
           <Select
             label="Tipo de Personal" required opciones={TIPO_PERSONAL}
             value={datos.tipo_personal}
-            onChange={(e) => handleTipoPersonal(e.target.value)}
+            {...validarProps("tipo_personal", datos.tipo_personal)}
+            onChange={(e) => {
+              handleTipoPersonal(e.target.value)
+            }}
           />
         </FieldGrid>
 
@@ -163,7 +276,10 @@ export default function Step2Laboral({ datos, onChange }) {
               label="Categoría / Nivel" required
               opciones={configRegimen.opciones}
               value={valorSubRegimen}
-              onChange={(e) => handleSubRegimen(e.target.value)}
+              {...validarProps("categoria_regimen", datos.categoria_regimen)}
+              onChange={(e) => {
+                handleSubRegimen(e.target.value)
+              }}
             />
 
             {/* Nivel remunerativo — solo DL 276 */}
@@ -172,7 +288,11 @@ export default function Step2Laboral({ datos, onChange }) {
                 label="Nivel Remunerativo" required
                 opciones={NIVEL_REMUNERATIVO}
                 value={datos.nivel_remunerativo || ""}
-                onChange={(e) => set("nivel_remunerativo", e.target.value)}
+                {...validarProps("nivel_remunerativo", datos.nivel_remunerativo)}
+                onChange={(e) => {
+                  set("nivel_remunerativo", e.target.value)
+                  validar("nivel_remunerativo", e.target.value)
+                }}
               />
             )}
 
@@ -182,9 +302,13 @@ export default function Step2Laboral({ datos, onChange }) {
                 label="Dedicación" required
                 opciones={DEDICACION}
                 value={datos.dedicacion || ""}
+                {...validarProps("dedicacion", datos.dedicacion)}
                 onChange={(e) => {
                   set("dedicacion", e.target.value)
-                  if (e.target.value !== "Horas") set("horas_semanales", null)
+                  validar("dedicacion", e.target.value)
+                  if (e.target.value !== "Horas") {
+                    set("horas_semanales", null)
+                  }
                 }}
               />
             )}
@@ -196,9 +320,12 @@ export default function Step2Laboral({ datos, onChange }) {
                 label="Horas Semanales" required type="number"
                 min={1} max={40}
                 value={datos.horas_semanales ?? ""}
-                onChange={(e) =>
-                  set("horas_semanales", parseInt(e.target.value) || null)
-                }
+                {...validarProps("horas_semanales", datos.horas_semanales)}
+                onChange={(e) => {
+                  const valor = parseInt(e.target.value) || null
+                  set("horas_semanales", valor)
+                  validar("horas_semanales", valor)
+                }}
                 placeholder="Ej: 20"
               />
             )}
@@ -276,14 +403,22 @@ export default function Step2Laboral({ datos, onChange }) {
                 <Input
                   label="Código RENACYT" required
                   value={datos.renacyt_codigo || ""}
-                  onChange={(e) => set("renacyt_codigo", e.target.value)}
+                  {...validarProps("renacyt_codigo", datos.renacyt_codigo)}
+                  onChange={(e) => {
+                    set("renacyt_codigo", e.target.value)
+                    validar("renacyt_codigo", e.target.value)
+                  }}
                   placeholder="Ej: P0012345"
                 />
                 <Select
                   label="Nivel RENACYT" required
                   opciones={NIVEL_RENACYT}
                   value={datos.renacyt_nivel || ""}
-                  onChange={(e) => set("renacyt_nivel", e.target.value)}
+                  {...validarProps("renacyt_nivel", datos.renacyt_nivel)}
+                  onChange={(e) => {
+                    set("renacyt_nivel", e.target.value)
+                    validar("renacyt_nivel", e.target.value)
+                  }}
                 />
               </FieldGrid>
 
@@ -348,7 +483,11 @@ export default function Step2Laboral({ datos, onChange }) {
           <Input
             label="Fecha de Ingreso" required type="date"
             value={datos.fecha_ingreso}
-            onChange={(e) => set("fecha_ingreso", e.target.value)}
+            {...validarProps("fecha_ingreso", datos.fecha_ingreso)}
+            onChange={(e) => {
+              set("fecha_ingreso", e.target.value)
+              validar("fecha_ingreso", e.target.value)
+            }}
           />
         </FieldGrid>
       </div>
