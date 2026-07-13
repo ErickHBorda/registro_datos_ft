@@ -12,7 +12,7 @@ import {
   SISTEMA_PENSION, AFP, RAMA_MILITAR, NIVEL_IDIOMA,
 } from "../../utils/constants"
 
-export default function Step1Personal({ datos, onChange }) {
+export default function Step1Personal({ datos, onChange, tocados: tocadosGlobales = {} }) {
   const [fotoPreview, setFotoPreview] = useState(null)
   const [mostrarTarjeta, setMostrarTarjeta] = useState(false)
 

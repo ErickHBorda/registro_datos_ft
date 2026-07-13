@@ -6,7 +6,7 @@ import {
 } from "../../utils/constants"
 import { useValidacion } from "../../hooks/useValidacion"
 
-export default function Step2Laboral({ datos, onChange }) {
+export default function Step2Laboral({ datos, onChange, tocados: tocadosGlobales = {} }) {
   const set = (campo, valor) => onChange("datos_laborales", campo, valor)
 
   // ── Hook de validación en tiempo real ─────────────────────
@@ -105,6 +105,34 @@ export default function Step2Laboral({ datos, onChange }) {
     },
   })
 
+  // Agregar useValidacion con tocadosGlobales
+  const { props: vProps } = useValidacion({
+    dependencia: {
+      requerido: true, mensajeRequerido: "La dependencia es obligatoria",
+    },
+    cargo: {
+      requerido: true, mensajeRequerido: "El cargo es obligatorio",
+    },
+    email_institucional: {
+      requerido: true, mensajeRequerido: "El email institucional es obligatorio",
+      patron: /@unamba\.edu\.pe$/, mensajePatron: "Debe terminar en @unamba.edu.pe",
+    },
+    fecha_ingreso: {
+      requerido: true, mensajeRequerido: "La fecha de ingreso es obligatoria",
+    },
+  }, tocadosGlobales)
+
+  // Agregar helper combinado igual que Step1
+  const campo = (nombre) => ({
+    value: datos[nombre] ?? "",
+    ...vProps(nombre, datos[nombre]),
+    onChange: (e) => {
+      const val = e.target.type === "checkbox" ? e.target.checked : e.target.value
+      vProps(nombre, datos[nombre]).onChange(e)
+      set(nombre, val)
+    },
+  })
+
   // ── Determinar configuración de régimen según condición+tipo
   const claveRegimen = datos.condicion && datos.tipo_personal
     ? `${datos.condicion}-${datos.tipo_personal}`
@@ -181,6 +209,7 @@ export default function Step2Laboral({ datos, onChange }) {
               label="Dependencia / Unidad Orgánica" required
               value={datos.dependencia}
               {...validarProps("dependencia", datos.dependencia)}
+              {...campo("dependencia")}
               onChange={(e) => {
                 set("dependencia", e.target.value)
                 validarProps("dependencia", e.target.value).onChange(e)
@@ -192,6 +221,7 @@ export default function Step2Laboral({ datos, onChange }) {
             label="Cargo que Desempeña" required
             value={datos.cargo}
             {...validarProps("cargo", datos.cargo)}
+            {...campo("cargo")}
             onChange={(e) => {
               set("cargo", e.target.value)
               validarProps("cargo", e.target.value).onChange(e)
@@ -202,6 +232,7 @@ export default function Step2Laboral({ datos, onChange }) {
             label="Correo Institucional" required type="email"
             value={datos.email_institucional}
             {...validarProps("email_institucional", datos.email_institucional)}
+            {...campo("email_institucional")}
             onChange={(e) => {
               set("email_institucional", e.target.value)
               validarProps("email_institucional", e.target.value).onChange(e)
@@ -484,6 +515,7 @@ export default function Step2Laboral({ datos, onChange }) {
             label="Fecha de Ingreso" required type="date"
             value={datos.fecha_ingreso}
             {...validarProps("fecha_ingreso", datos.fecha_ingreso)}
+            {...campo("fecha_ingreso")}
             onChange={(e) => {
               set("fecha_ingreso", e.target.value)
               validar("fecha_ingreso", e.target.value)

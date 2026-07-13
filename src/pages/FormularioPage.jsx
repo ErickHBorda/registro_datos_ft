@@ -43,7 +43,7 @@ export default function FormularioPage() {
     actualizarSeccion, irAlPaso,
     siguientePaso, pasoAnterior,
     prepararPayload, resetFicha,
-    actualizarCampo,
+    actualizarCampo, tocados, personalId,
   } = useFicha()
 
   // Ref para subir al inicio al cambiar de paso
@@ -163,6 +163,7 @@ export default function FormularioPage() {
     setCargando(true)
     try {
       const payload = prepararPayload()
+      console.log("PAYLOAD ENVIADO:", JSON.stringify(payload, null, 2))
       const respuesta = await personalService.crear(payload)
       const nuevoId = respuesta.personal.id
 
@@ -302,12 +303,14 @@ export default function FormularioPage() {
         <Step1Personal
           datos={ficha.personal}
           onChange={actualizarCampo}
+          tocados={tocados}
         />
       )
       case 2: return (
         <Step2Laboral
           datos={ficha.datos_laborales}
           onChange={actualizarCampo}
+          tocados={tocados}
         />
       )
       case 3: return (
@@ -365,6 +368,8 @@ export default function FormularioPage() {
     }
   }
 
+  const estadoGuardado = !!localStorage.getItem("unamba_ficha_2025")
+
   return (
     <div className="min-h-screen bg-unamba-light">
       <Toaster position="top-right" />
@@ -392,6 +397,24 @@ export default function FormularioPage() {
 
         {/* Ancla para scroll top */}
         <div ref={topRef} />
+        {/* ── Aviso de borrador guardado ─────────────────── */}
+        {estadoGuardado && pasoActual > 1 && !completado && (
+          <div className="flex items-center justify-between px-4 py-2.5
+                          bg-blue-50 border border-blue-200 rounded-form text-xs">
+            <div className="flex items-center gap-2 text-blue-700">
+              <span>💾</span>
+              <span>Borrador guardado automáticamente</span>
+            </div>
+            <button
+              type="button"
+              onClick={resetFicha}
+              className="text-blue-500 hover:text-blue-700 font-medium
+                         underline underline-offset-2 transition-colors"
+            >
+              Limpiar y empezar de nuevo
+            </button>
+          </div>
+        )}
 
         {/* ── Stepper con Zeigarnik ─────────────────────── */}
         <div className="form-card">
