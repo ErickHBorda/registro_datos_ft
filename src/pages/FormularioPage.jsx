@@ -1,11 +1,12 @@
-// Layout principal del formulario multi-paso
-
 import { useRef, useState } from "react"
 import { Toaster, toast } from "react-hot-toast"
 import { useFicha } from "../hooks/useFicha"
 import { personalService, fotosService } from "../services/api"
+import { useModalBienvenida }    from "../hooks/useModal"
+import ModalBienvenida           from "../components/ui/ModalBienvenida"
 import { PASOS_FICHA } from "../utils/constants"
 import Stepper from "../components/ui/Stepper"
+import BarraProgreso from "../components/ui/BarraProgreso"
 import NavButtons from "../components/ui/NavButtons"
 import Step1Personal from "../components/steps/Step1Personal"
 import Step2Laboral from "../components/steps/Step2Laboral"
@@ -47,7 +48,11 @@ export default function FormularioPage() {
   } = useFicha()
 
   // Ref para subir al inicio al cambiar de paso
+  const { mostrar: mostrarBienvenida, cerrar: cerrarBienvenida } =
+    useModalBienvenida()
+
   const topRef = useRef(null)
+  const estadoGuardado = !!localStorage.getItem("unamba_ficha_2025")
 
   const scrollTop = () =>
     topRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -367,40 +372,32 @@ export default function FormularioPage() {
       default: return null
     }
   }
-
-  const estadoGuardado = !!localStorage.getItem("unamba_ficha_2025")
-
   return (
     <div className="min-h-screen bg-unamba-light">
       <Toaster position="top-right" />
 
-      {/* ── Header institucional ──────────────────────────── */}
-      <header className="bg-unamba-blue shadow-md sticky top-0 z-30">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center
-                          justify-center shrink-0">
-            <span className="text-white font-black text-sm">U</span>
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-white font-bold text-sm leading-tight truncate">
-              Ficha Digital de Registro de Personal
-            </h1>
-            <p className="text-blue-200 text-xs truncate">
-              UNAMBA — Oficina de RR.HH. · Sub Oficina de Escalafón
-            </p>
-          </div>
-        </div>
-      </header>
+      {/* ── Modal de bienvenida ───────────────────────────── */}
+      {mostrarBienvenida && (
+        <ModalBienvenida onComenzar={cerrarBienvenida} />
+      )}
+
+      {/* ── Barra de progreso fija (reemplaza el header) ──── */}
+      <BarraProgreso
+        pasoActual={pasoActual}
+        onIrAlPaso={handleIrAlPaso}
+      />
 
       {/* ── Contenido principal ───────────────────────────── */}
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+      {/* pt-32 para compensar la altura de la barra fija */}
+      <main className="max-w-3xl mx-auto px-4 pt-32 pb-6 space-y-5">
 
-        {/* Ancla para scroll top */}
         <div ref={topRef} />
-        {/* ── Aviso de borrador guardado ─────────────────── */}
-        {estadoGuardado && pasoActual > 1 && !completado && (
+
+        {/* Aviso de borrador guardado */}
+        {estadoGuardado && pasoActual > 1 && (
           <div className="flex items-center justify-between px-4 py-2.5
-                          bg-blue-50 border border-blue-200 rounded-form text-xs">
+                          bg-blue-50 border border-blue-200 rounded-form
+                          text-xs">
             <div className="flex items-center gap-2 text-blue-700">
               <span>💾</span>
               <span>Borrador guardado automáticamente</span>
@@ -416,17 +413,10 @@ export default function FormularioPage() {
           </div>
         )}
 
-        {/* ── Stepper con Zeigarnik ─────────────────────── */}
-        <div className="form-card">
-          <Stepper
-            pasoActual={pasoActual}
-            onIrAlPaso={handleIrAlPaso}
-          />
-        </div>
-
-        {/* ── Título del paso actual ────────────────────── */}
+        {/* Título del paso actual */}
         <div className="flex items-center gap-2 px-1">
-          <span className="text-xs font-semibold text-primary-600 uppercase tracking-widest">
+          <span className="text-xs font-semibold text-primary-600
+                           uppercase tracking-widest">
             Paso {pasoActual}
           </span>
           <span className="text-slate-300">·</span>
@@ -435,10 +425,10 @@ export default function FormularioPage() {
           </span>
         </div>
 
-        {/* ── Formulario del paso actual ────────────────── */}
+        {/* Formulario del paso actual */}
         {renderPaso()}
 
-        {/* ── Botones de navegación fijos ───────────────── */}
+        {/* Botones de navegación fijos */}
         <NavButtons
           pasoActual={pasoActual}
           totalPasos={PASOS_FICHA.length}
@@ -449,7 +439,8 @@ export default function FormularioPage() {
         />
 
       </main>
-      {/* ── Modal de confirmación ──────────────────────── */}
+
+      {/* Modal de confirmación */}
       <ModalConfirmacion
         visible={modalVisible}
         onConfirmar={handleConfirmar}

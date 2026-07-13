@@ -22,37 +22,30 @@ export default function ModalBienvenida({ onComenzar }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Fondo con gradiente institucional */}
-            <div className="absolute inset-0 bg-gradient-to-br
-                      from-unamba-blue via-primary-800 to-primary-900" />
+            <div className="absolute inset-0 bg-slate-200" />
 
             {/* Panel principal */}
             <div className={`
-        relative bg-white rounded-2xl shadow-2xl w-full max-w-lg
-        overflow-hidden transition-all duration-300
-        ${visible
-                    ? "opacity-100 translate-y-0 scale-100"
-                    : "opacity-0 translate-y-4 scale-95"
-                }
-      `}>
+            relative bg-white rounded-2xl shadow-2xl w-full max-w-lg
+            overflow-hidden transition-all duration-300
+            ${visible
+                ? "opacity-100 translate-y-0 scale-100"
+                : "opacity-0 translate-y-4 scale-95"
+            }`}>
 
                 {/* ── Cabecera institucional ─────────────────────── */}
-                <div className="bg-gradient-to-r from-unamba-blue to-primary-700
-                        px-6 py-5">
-                    <div className="flex items-center gap-4">
-                        {/* Logo — reemplaza el div por img cuando tengas el archivo */}
-                        <div className="w-16 h-16 rounded-xl bg-white/15 flex items-center
-                            justify-center shrink-0 border-2 border-white/20">
+                <div className="bg-gradient-to-r from-unamba-blue to-primary-700 px-6 py-5">
+                    <div className="flex items-center gap-5">
+                        {/* Logo — sin bordes, más grande */}
+                        <div className="bg-white rounded-lg p-2 shadow-lg">
                             <img
-                                src="../assets/logo-unamba.png"
+                                src={logoUnamba}
                                 alt="Logo UNAMBA"
-                                className="w-14 h-14 object-contain"
+                                className="w-20 h-20 object-contain rounded-none"
                             />
-
-                            <span className="text-white font-black text-2xl">U</span>
                         </div>
-                        <div>
-                            <p className="text-blue-200 text-xs font-medium uppercase
-                            tracking-widest mb-0.5">
+                        <div className="flex-1">
+                            <p className="text-blue-200 text-xs font-medium uppercase tracking-widest mb-0.5">
                                 Universidad Nacional Micaela Bastidas de Apurímac
                             </p>
                             <h1 className="text-white font-bold text-base leading-tight">
@@ -109,7 +102,6 @@ export default function ModalBienvenida({ onComenzar }) {
                                 "DNI y libreta militar (si aplica)",
                                 "Número de cuenta bancaria y CCI",
                                 "Documentos de formación académica (títulos, diplomas)",
-                                "Resoluciones de cargos anteriores",
                                 "Foto de perfil en formato JPG o PNG",
                                 "Código RENACYT (si es investigador)",
                             ].map((item, i) => (
@@ -132,8 +124,7 @@ export default function ModalBienvenida({ onComenzar }) {
                                 Importante
                             </p>
                             <p className="text-xs text-amber-600 leading-relaxed">
-                                El formulario se guarda automáticamente. Si cierra la página
-                                podrá continuar desde donde lo dejó. Al finalizar, sus datos
+                                Al finalizar, sus datos
                                 quedarán registrados bajo <strong>declaración jurada</strong>{" "}
                                 conforme a la Ley N° 27444.
                             </p>
