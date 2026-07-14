@@ -109,25 +109,6 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
         </div>
       </div>
 
-      {/* ══ BARRA DE PROGRESO GRUESA ════════════════════════ */}
-      <div className="h-2 bg-slate-100 relative overflow-hidden">
-        {/* Fondo animado tipo shimmer */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent
-                        via-white/30 to-transparent animate-pulse" />
-        {/* Barra de progreso */}
-        <div
-          className="h-full bg-gradient-to-r from-primary-500 via-primary-400
-                     to-green-400 transition-all duration-700 ease-out
-                     relative overflow-hidden"
-          style={{ width: `${porcentaje}%` }}
-        >
-          {/* Brillo deslizante */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent
-                          via-white/40 to-transparent -skew-x-12
-                          animate-pulse" />
-        </div>
-      </div>
-
       {/* ══ STEPPER COMPACTO ════════════════════════════════ */}
       <div className="bg-white px-4 py-2">
         <div className="max-w-3xl mx-auto">
@@ -224,7 +205,24 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
           </div>
         </div>
       </div>
-
+      {/* ══ BARRA DE PROGRESO GRUESA ════════════════════════ */}
+      <div className="h-2 bg-slate-100 relative overflow-hidden">
+        {/* Fondo animado tipo shimmer */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent
+                        via-white/30 to-transparent animate-pulse" />
+        {/* Barra de progreso */}
+        <div
+          className="h-full bg-gradient-to-r from-primary-500 via-primary-400
+                     to-green-400 transition-all duration-700 ease-out
+                     relative overflow-hidden"
+          style={{ width: `${porcentaje}%` }}
+        >
+          {/* Brillo deslizante */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent
+                          via-white/40 to-transparent -skew-x-12
+                          animate-pulse" />
+        </div>
+      </div>
     </div>
   )
 }
