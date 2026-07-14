@@ -4,13 +4,14 @@ import { Input, Select, SectionTitle, FieldGrid } from "../ui/FormField"
 import ModalFormulario from "../ui/ModalFormulario"
 import { TIPO_PERSONAL } from "../../utils/constants"
 import { useValidacion } from "../../hooks/useValidacion"
+import { mostrarErroresPaso } from "../ui/ToastErrores"
 
 // ── Reconocimiento vacío ───────────────────────────────────
 const RECONOCIMIENTO_VACIO = (orden) => ({
-  nombre_entidad:      "",
+  nombre_entidad: "",
   tipo_reconocimiento: "",
-  documento_acredita:  "",
-  fecha_documento:     "",
+  documento_acredita: "",
+  fecha_documento: "",
   orden,
 })
 
@@ -156,15 +157,15 @@ export default function Step6Otros({
   // ── Estado del modal de reconocimientos ───────────────
   const [modal, setModal] = useState({
     visible: false,
-    index:   null,
-    item:    null,
+    index: null,
+    item: null,
   })
 
   const abrirAgregar = () => {
     setModal({
       visible: true,
-      index:   null,
-      item:    RECONOCIMIENTO_VACIO(reconocimientos.length + 1),
+      index: null,
+      item: RECONOCIMIENTO_VACIO(reconocimientos.length + 1),
     })
   }
 
@@ -172,7 +173,7 @@ export default function Step6Otros({
     setModal({
       visible: true,
       index,
-      item:    { ...reconocimientos[index] },
+      item: { ...reconocimientos[index] },
     })
   }
 
@@ -185,7 +186,17 @@ export default function Step6Otros({
 
   const handleGuardar = () => {
     const { index, item } = modal
-    if (!item.nombre_entidad?.trim() || !item.tipo_reconocimiento?.trim()) return
+    const errores = []
+
+    if (!item.nombre_entidad?.trim())
+      errores.push("Nombre de la entidad es obligatorio")
+    if (!item.tipo_reconocimiento?.trim())
+      errores.push("Tipo de reconocimiento es obligatorio")
+
+    if (errores.length > 0) {
+      mostrarErroresPaso(errores, "Reconocimiento")
+      return
+    }
 
     if (index !== null) {
       const lista = [...reconocimientos]
@@ -206,11 +217,11 @@ export default function Step6Otros({
   }
 
   const DIAS = [
-    { campo: "dia_lunes",     label: "Lun" },
-    { campo: "dia_martes",    label: "Mar" },
+    { campo: "dia_lunes", label: "Lun" },
+    { campo: "dia_martes", label: "Mar" },
     { campo: "dia_miercoles", label: "Mié" },
-    { campo: "dia_jueves",    label: "Jue" },
-    { campo: "dia_viernes",   label: "Vie" },
+    { campo: "dia_jueves", label: "Jue" },
+    { campo: "dia_viernes", label: "Vie" },
   ]
 
   return (
@@ -241,14 +252,14 @@ export default function Step6Otros({
               onClick={() => onChangeInstituciones({
                 ...otrasInstituciones,
                 labora_otra_inst: false,
-                tipo_personal:    "",
-                nombre_entidad:   "",
-                horas_diarias:    null,
-                dia_lunes:        false,
-                dia_martes:       false,
-                dia_miercoles:    false,
-                dia_jueves:       false,
-                dia_viernes:      false,
+                tipo_personal: "",
+                nombre_entidad: "",
+                horas_diarias: null,
+                dia_lunes: false,
+                dia_martes: false,
+                dia_miercoles: false,
+                dia_jueves: false,
+                dia_viernes: false,
               })}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold
                           transition-all duration-150 border

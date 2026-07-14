@@ -8,40 +8,41 @@ import {
     ESTADO_ESTUDIO, TIPO_CONSTANCIA,
 } from "../../utils/constants"
 import { useValidacion } from "../../hooks/useValidacion"
+import { mostrarErroresPaso } from "../ui/ToastErrores"
 
 // ── Límites por nivel ──────────────────────────────────────
 const LIMITES = {
-    "Primaria":               1,
-    "Secundaria":             1,
-    "Técnico":                1,
+    "Primaria": 1,
+    "Secundaria": 1,
+    "Técnico": 1,
     "Bachiller Universitario": 3,
-    "Título Universitario":   3,
-    "Segunda Especialidad":   3,
-    "Maestría":               3,
-    "Doctorado":              3,
+    "Título Universitario": 3,
+    "Segunda Especialidad": 3,
+    "Maestría": 3,
+    "Doctorado": 3,
 }
 
 // ── Registros vacíos ───────────────────────────────────────
 const FORMACION_VACIA = (nivel, orden) => ({
     nivel,
-    estado:             "",
-    centro_estudios:    "",
-    grado_obtenido:     "",
-    mencion:            "",
-    fecha_inicio:       "",
-    fecha_conclusion:   "",
+    estado: "",
+    centro_estudios: "",
+    grado_obtenido: "",
+    mencion: "",
+    fecha_inicio: "",
+    fecha_conclusion: "",
     documento_acredita: "",
     orden,
 })
 
 const OTRO_ESTUDIO_VACIO = (tipo, orden) => ({
     tipo,
-    nombre_curso:    "",
+    nombre_curso: "",
     centro_estudios: "",
-    fecha_inicio:    "",
-    fecha_fin:       "",
-    fecha_emision:   "",
-    duracion_horas:  "",
+    fecha_inicio: "",
+    fecha_fin: "",
+    fecha_emision: "",
+    duracion_horas: "",
     tipo_constancia: "",
     orden,
 })
@@ -310,8 +311,8 @@ function FormacionRow({ item, nivel, onEditar, onEliminar }) {
                                 ${item.estado === "Completo"
                                     ? "bg-green-100 text-green-700"
                                     : item.estado === "En curso"
-                                    ? "bg-blue-100 text-blue-700"
-                                    : "bg-amber-100 text-amber-700"
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-amber-100 text-amber-700"
                                 }`}>
                                 {item.estado}
                             </span>
@@ -345,10 +346,10 @@ export default function Step4Formacion({
     // ── Estado del modal ───────────────────────────────────
     const [modal, setModal] = useState({
         visible: false,
-        tipo:    null,   // "formacion" | "otro"
-        nivel:   null,   // nivel o tipo de otro estudio
-        index:   null,
-        item:    null,
+        tipo: null,   // "formacion" | "otro"
+        nivel: null,   // nivel o tipo de otro estudio
+        index: null,
+        item: null,
     })
 
     // ── Helpers de agrupación ──────────────────────────────
@@ -374,20 +375,20 @@ export default function Step4Formacion({
         if (existentes.length >= LIMITES[nivel]) return
         setModal({
             visible: true,
-            tipo:    "formacion",
+            tipo: "formacion",
             nivel,
-            index:   null,
-            item:    FORMACION_VACIA(nivel, existentes.length + 1),
+            index: null,
+            item: FORMACION_VACIA(nivel, existentes.length + 1),
         })
     }
 
     const abrirEditarFormacion = (index, nivel) => {
         setModal({
             visible: true,
-            tipo:    "formacion",
+            tipo: "formacion",
             nivel,
             index,
-            item:    { ...formacion[index] },
+            item: { ...formacion[index] },
         })
     }
 
@@ -397,29 +398,37 @@ export default function Step4Formacion({
         if (existentes.length >= 10) return
         setModal({
             visible: true,
-            tipo:    "otro",
-            nivel:   tipo,
-            index:   null,
-            item:    OTRO_ESTUDIO_VACIO(tipo, existentes.length + 1),
+            tipo: "otro",
+            nivel: tipo,
+            index: null,
+            item: OTRO_ESTUDIO_VACIO(tipo, existentes.length + 1),
         })
     }
 
     const abrirEditarOtro = (index, tipo) => {
         setModal({
             visible: true,
-            tipo:    "otro",
-            nivel:   tipo,
+            tipo: "otro",
+            nivel: tipo,
             index,
-            item:    { ...otrosEstudios[index] },
+            item: { ...otrosEstudios[index] },
         })
     }
 
     // ── Guardar desde el modal ─────────────────────────────
     const handleGuardar = () => {
         const { tipo, index, item } = modal
+        const errores = []
 
         if (tipo === "formacion") {
-            if (!item.estado || !item.centro_estudios?.trim()) return
+            if (!item.estado)
+                errores.push("Estado es obligatorio")
+            if (!item.centro_estudios?.trim())
+                errores.push("Centro de estudios es obligatorio")
+            if (errores.length > 0) {
+                mostrarErroresPaso(errores, modal.nivel)
+                return
+            }
             if (index !== null) {
                 const lista = [...formacion]
                 lista[index] = item
@@ -428,7 +437,14 @@ export default function Step4Formacion({
                 onChangeFormacion([...formacion, item])
             }
         } else {
-            if (!item.nombre_curso?.trim() || !item.centro_estudios?.trim()) return
+            if (!item.nombre_curso?.trim())
+                errores.push("Nombre del curso es obligatorio")
+            if (!item.centro_estudios?.trim())
+                errores.push("Centro de estudios es obligatorio")
+            if (errores.length > 0) {
+                mostrarErroresPaso(errores, modal.nivel)
+                return
+            }
             if (index !== null) {
                 const lista = [...otrosEstudios]
                 lista[index] = item
@@ -464,13 +480,13 @@ export default function Step4Formacion({
     const gruposSuperiores = [
         {
             titulo: "Educación Superior",
-            icono:  GraduationCap,
+            icono: GraduationCap,
             niveles: ["Técnico", "Bachiller Universitario",
                 "Título Universitario", "Segunda Especialidad"],
         },
         {
             titulo: "Posgrado",
-            icono:  Award,
+            icono: Award,
             niveles: ["Maestría", "Doctorado"],
         },
     ]

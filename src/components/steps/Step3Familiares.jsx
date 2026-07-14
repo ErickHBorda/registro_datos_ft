@@ -4,6 +4,7 @@ import { Input, Select, Checkbox, SectionTitle, FieldGrid } from "../ui/FormFiel
 import ModalFormulario from "../ui/ModalFormulario"
 import { SEXO, PARENTESCO } from "../../utils/constants"
 import { useValidacion } from "../../hooks/useValidacion"
+import { mostrarErroresPaso } from "../ui/ToastErrores"
 
 // ── Familiar vacío ─────────────────────────────────────────
 const FAMILIAR_VACIO = {
@@ -245,18 +246,28 @@ export default function Step3Familiares({ datos, onChange }) {
 
   // ── Guardar desde el modal ─────────────────────────────
   const handleGuardar = () => {
-    if (!itemActual.apellido_paterno?.trim() ||
-        !itemActual.apellido_materno?.trim() ||
-        !itemActual.nombres?.trim() ||
-        !itemActual.parentesco) return
+    const errores = []
+    if (!itemActual.apellido_paterno?.trim())
+      errores.push("Apellido paterno es obligatorio")
+    if (!itemActual.apellido_materno?.trim())
+      errores.push("Apellido materno es obligatorio")
+    if (!itemActual.nombres?.trim())
+      errores.push("Nombres son obligatorios")
+    if (!itemActual.parentesco)
+      errores.push("Parentesco es obligatorio")
+    if (itemActual.dni && !/^\d{8}$/.test(itemActual.dni))
+      errores.push("DNI debe tener 8 dígitos")
+
+    if (errores.length > 0) {
+      mostrarErroresPaso(errores, "Datos del familiar")
+      return
+    }
 
     if (indexActual !== null) {
-      // Edición
       const lista = [...datos]
       lista[indexActual] = itemActual
       onChange("familiares", null, lista)
     } else {
-      // Nuevo
       onChange("familiares", null, [...datos, itemActual])
     }
     setModalVisible(false)

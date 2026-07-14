@@ -6,24 +6,25 @@ import {
 import { Input, SectionTitle, FieldGrid } from "../ui/FormField"
 import ModalFormulario from "../ui/ModalFormulario"
 import { useValidacion } from "../../hooks/useValidacion"
+import { mostrarErroresPaso } from "../ui/ToastErrores"
 
 // ── Registros vacíos ───────────────────────────────────────
 const EXP_LABORAL_VACIA = (tipo, orden) => ({
-  tipo_institucion:   tipo,
-  nombre_entidad:     "",
-  cargo:              "",
+  tipo_institucion: tipo,
+  nombre_entidad: "",
+  cargo: "",
   documento_acredita: "",
-  fecha_inicio:       "",
-  fecha_culminacion:  "",
+  fecha_inicio: "",
+  fecha_culminacion: "",
   orden,
 })
 
 const EXP_DOCENTE_VACIA = (orden) => ({
-  nombre_entidad:     "",
-  categoria:          "",
+  nombre_entidad: "",
+  categoria: "",
   documento_acredita: "",
-  fecha_inicio:       "",
-  fecha_culminacion:  "",
+  fecha_inicio: "",
+  fecha_culminacion: "",
   orden,
 })
 
@@ -58,13 +59,13 @@ const reglasExpDocente = {
 function calcularTiempo(fechaInicio, fechaFin) {
   if (!fechaInicio) return ""
   const inicio = new Date(fechaInicio)
-  const fin    = fechaFin ? new Date(fechaFin) : new Date()
+  const fin = fechaFin ? new Date(fechaFin) : new Date()
   if (isNaN(inicio.getTime())) return ""
-  const meses  = (fin.getFullYear() - inicio.getFullYear()) * 12
+  const meses = (fin.getFullYear() - inicio.getFullYear()) * 12
     + (fin.getMonth() - inicio.getMonth())
-  const anios  = Math.floor(meses / 12)
+  const anios = Math.floor(meses / 12)
   const mesesR = meses % 12
-  if (anios === 0)  return `${mesesR} mes${mesesR !== 1 ? "es" : ""}`
+  if (anios === 0) return `${mesesR} mes${mesesR !== 1 ? "es" : ""}`
   if (mesesR === 0) return `${anios} año${anios !== 1 ? "s" : ""}`
   return `${anios} año${anios !== 1 ? "s" : ""} ${mesesR} mes${mesesR !== 1 ? "es" : ""}`
 }
@@ -312,11 +313,11 @@ export default function Step5Experiencia({
     const vacio = tipo === "docente"
       ? EXP_DOCENTE_VACIA(expDocente.length + 1)
       : EXP_LABORAL_VACIA(
-          tipo === "estatal" ? "Estatal" : "Privada",
-          expLaboral.filter((e) =>
-            e.tipo_institucion === (tipo === "estatal" ? "Estatal" : "Privada")
-          ).length + 1
-        )
+        tipo === "estatal" ? "Estatal" : "Privada",
+        expLaboral.filter((e) =>
+          e.tipo_institucion === (tipo === "estatal" ? "Estatal" : "Privada")
+        ).length + 1
+      )
     setModal({ visible: true, tipo, index: null, item: vacio })
   }
 
@@ -338,9 +339,17 @@ export default function Step5Experiencia({
   // ── Guardar ───────────────────────────────────────────
   const handleGuardar = () => {
     const { tipo, index, item } = modal
+    const errores = []
 
     if (tipo === "docente") {
-      if (!item.nombre_entidad?.trim() || !item.fecha_inicio) return
+      if (!item.nombre_entidad?.trim())
+        errores.push("Nombre de la entidad es obligatorio")
+      if (!item.fecha_inicio)
+        errores.push("Fecha de inicio es obligatoria")
+      if (errores.length > 0) {
+        mostrarErroresPaso(errores, "Experiencia Docente")
+        return
+      }
       if (index !== null) {
         const lista = [...expDocente]
         lista[index] = item
@@ -349,7 +358,19 @@ export default function Step5Experiencia({
         onChangeDocente([...expDocente, item])
       }
     } else {
-      if (!item.nombre_entidad?.trim() || !item.cargo?.trim() || !item.fecha_inicio) return
+      if (!item.nombre_entidad?.trim())
+        errores.push("Nombre de la entidad es obligatorio")
+      if (!item.cargo?.trim())
+        errores.push("Cargo desempeñado es obligatorio")
+      if (!item.fecha_inicio)
+        errores.push("Fecha de inicio es obligatoria")
+      if (errores.length > 0) {
+        const titulo = tipo === "estatal"
+          ? "Experiencia Estatal"
+          : "Experiencia Privada"
+        mostrarErroresPaso(errores, titulo)
+        return
+      }
       if (index !== null) {
         const lista = [...expLaboral]
         lista[index] = item
@@ -380,20 +401,20 @@ export default function Step5Experiencia({
 
   const expDocenteConIdx = expDocente.map((e, i) => ({ ...e, _index: i }))
 
-  const esDocente       = tipoPersonal === "Docente"
+  const esDocente = tipoPersonal === "Docente"
   const esAdministrativo = tipoPersonal === "Administrativo"
-  const sinDefinir      = !tipoPersonal
+  const sinDefinir = !tipoPersonal
 
   // ── Título del modal ──────────────────────────────────
   const titulosModal = {
-    estatal:  { agregar: "Agregar experiencia estatal",  editar: "Editar experiencia estatal"  },
-    privada:  { agregar: "Agregar experiencia privada",  editar: "Editar experiencia privada"  },
-    docente:  { agregar: "Agregar experiencia docente",  editar: "Editar experiencia docente"  },
+    estatal: { agregar: "Agregar experiencia estatal", editar: "Editar experiencia estatal" },
+    privada: { agregar: "Agregar experiencia privada", editar: "Editar experiencia privada" },
+    docente: { agregar: "Agregar experiencia docente", editar: "Editar experiencia docente" },
   }
   const tituloModal = modal.tipo
     ? (modal.index !== null
-        ? titulosModal[modal.tipo].editar
-        : titulosModal[modal.tipo].agregar)
+      ? titulosModal[modal.tipo].editar
+      : titulosModal[modal.tipo].agregar)
     : ""
 
   return (
