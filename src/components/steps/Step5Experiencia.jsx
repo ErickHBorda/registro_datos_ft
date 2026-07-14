@@ -1,454 +1,485 @@
 import { useState } from "react"
 import {
-    Briefcase, GraduationCap, Plus, Trash2,
-    ChevronDown, ChevronUp, Building, Info
+  Briefcase, GraduationCap, Plus, Trash2,
+  Pencil, Building, Info
 } from "lucide-react"
-import { Input, Select, SectionTitle, FieldGrid } from "../ui/FormField"
-import { TIPO_INSTITUCION } from "../../utils/constants"
+import { Input, SectionTitle, FieldGrid } from "../ui/FormField"
+import ModalFormulario from "../ui/ModalFormulario"
 import { useValidacion } from "../../hooks/useValidacion"
 
-// ── Registros vacíos (sin tiempo_cargo) ───────────────────
+// ── Registros vacíos ───────────────────────────────────────
 const EXP_LABORAL_VACIA = (tipo, orden) => ({
-    tipo_institucion: tipo,
-    nombre_entidad: "",
-    cargo: "",
-    documento_acredita: "",
-    fecha_inicio: "",
-    fecha_culminacion: "",
-    orden,
+  tipo_institucion:   tipo,
+  nombre_entidad:     "",
+  cargo:              "",
+  documento_acredita: "",
+  fecha_inicio:       "",
+  fecha_culminacion:  "",
+  orden,
 })
 
 const EXP_DOCENTE_VACIA = (orden) => ({
-    nombre_entidad: "",
-    categoria: "",
-    documento_acredita: "",
-    fecha_inicio: "",
-    fecha_culminacion: "",
-    orden,
+  nombre_entidad:     "",
+  categoria:          "",
+  documento_acredita: "",
+  fecha_inicio:       "",
+  fecha_culminacion:  "",
+  orden,
 })
 
 // ── Reglas de validación ───────────────────────────────────
 const reglasExpLaboral = {
-    nombre_entidad: {
-        requerido: true,
-        minLength: 2,
-        mensajeRequerido: "Nombre de la entidad es obligatorio",
-    },
-    cargo: {
-        requerido: true,
-        minLength: 2,
-        mensajeRequerido: "Cargo desempeñado es obligatorio",
-    },
-    fecha_inicio: {
-        requerido: true,
-        mensajeRequerido: "Fecha de inicio es obligatoria",
-    },
+  nombre_entidad: {
+    requerido: true, minLength: 2,
+    mensajeRequerido: "Nombre de la entidad es obligatorio",
+  },
+  cargo: {
+    requerido: true, minLength: 2,
+    mensajeRequerido: "Cargo desempeñado es obligatorio",
+  },
+  fecha_inicio: {
+    requerido: true,
+    mensajeRequerido: "Fecha de inicio es obligatoria",
+  },
 }
 
 const reglasExpDocente = {
-    nombre_entidad: {
-        requerido: true,
-        minLength: 2,
-        mensajeRequerido: "Nombre de la entidad es obligatorio",
-    },
-    fecha_inicio: {
-        requerido: true,
-        mensajeRequerido: "Fecha de inicio es obligatoria",
-    },
+  nombre_entidad: {
+    requerido: true, minLength: 2,
+    mensajeRequerido: "Nombre de la entidad es obligatorio",
+  },
+  fecha_inicio: {
+    requerido: true,
+    mensajeRequerido: "Fecha de inicio es obligatoria",
+  },
 }
 
-// ── Calcula tiempo en el cargo automáticamente ─────────────
+// ── Calcula tiempo en el cargo ─────────────────────────────
 function calcularTiempo(fechaInicio, fechaFin) {
-    if (!fechaInicio) return ""
-    const inicio = new Date(fechaInicio)
-    const fin = fechaFin ? new Date(fechaFin) : new Date()
-    if (isNaN(inicio.getTime())) return ""
-    const meses = (fin.getFullYear() - inicio.getFullYear()) * 12
-        + (fin.getMonth() - inicio.getMonth())
-    const anios = Math.floor(meses / 12)
-    const mesesR = meses % 12
-    if (anios === 0) return `${mesesR} mes${mesesR !== 1 ? "es" : ""}`
-    if (mesesR === 0) return `${anios} año${anios !== 1 ? "s" : ""}`
-    return `${anios} año${anios !== 1 ? "s" : ""} ${mesesR} mes${mesesR !== 1 ? "es" : ""}`
-}
-
-// ── Card colapsable ────────────────────────────────────────
-function ExpCard({ titulo, subtitulo, badge, onEliminar, children }) {
-    const [expandido, setExpandido] = useState(true)
-
-    return (
-        <div className="border border-slate-200 rounded-form overflow-hidden
-                    hover:border-slate-300 transition-colors">
-            <div
-                className="flex items-center justify-between px-4 py-3
-                   bg-slate-50 cursor-pointer select-none
-                   hover:bg-slate-100 transition-colors"
-                onClick={() => setExpandido(!expandido)}
-            >
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center
-                          justify-center shrink-0">
-                        <Building size={13} className="text-primary-600" />
-                    </div>
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-slate-800 truncate">
-                                {titulo}
-                            </p>
-                            {badge && (
-                                <span className="text-xs px-1.5 py-0.5 rounded-full font-medium
-                                 bg-blue-100 text-blue-700 shrink-0">
-                                    {badge}
-                                </span>
-                            )}
-                        </div>
-                        {subtitulo && (
-                            <p className="text-xs text-slate-400 truncate">{subtitulo}</p>
-                        )}
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onEliminar() }}
-                        className="p-1.5 text-red-400 hover:text-red-600
-                       hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                        <Trash2 size={13} />
-                    </button>
-                    {expandido
-                        ? <ChevronUp size={15} className="text-slate-400" />
-                        : <ChevronDown size={15} className="text-slate-400" />
-                    }
-                </div>
-            </div>
-
-            {expandido && (
-                <div className="p-4">{children}</div>
-            )}
-        </div>
-    )
+  if (!fechaInicio) return ""
+  const inicio = new Date(fechaInicio)
+  const fin    = fechaFin ? new Date(fechaFin) : new Date()
+  if (isNaN(inicio.getTime())) return ""
+  const meses  = (fin.getFullYear() - inicio.getFullYear()) * 12
+    + (fin.getMonth() - inicio.getMonth())
+  const anios  = Math.floor(meses / 12)
+  const mesesR = meses % 12
+  if (anios === 0)  return `${mesesR} mes${mesesR !== 1 ? "es" : ""}`
+  if (mesesR === 0) return `${anios} año${anios !== 1 ? "s" : ""}`
+  return `${anios} año${anios !== 1 ? "s" : ""} ${mesesR} mes${mesesR !== 1 ? "es" : ""}`
 }
 
 // ── Formulario experiencia laboral ─────────────────────────
-function FormExpLaboral({ item, onActualizar }) {
-    const set = (campo, valor) => onActualizar(campo, valor)
+function FormExpLaboral({ item, onChange }) {
+  const tocadosIniciales = Object.fromEntries(
+    Object.keys(reglasExpLaboral).map((k) => [k, !!item[k]])
+  )
+  const { props: vProps } = useValidacion(reglasExpLaboral, tocadosIniciales)
 
-    // ── Hook de validación en tiempo real ─────────────────
-    const { props: validarProps, validar } = useValidacion(reglasExpLaboral)
+  const campo = (nombre) => ({
+    value: item[nombre] ?? "",
+    ...vProps(nombre, item[nombre]),
+    onChange: (e) => {
+      vProps(nombre, item[nombre]).onChange(e)
+      onChange(nombre, e.target.value)
+    },
+  })
 
-    // ── Handler genérico ──────────────────────────────────
-    const handleChange = (campo, valor) => {
-        set(campo, valor)
-        validar(campo, valor)
-    }
+  const tiempo = calcularTiempo(item.fecha_inicio, item.fecha_culminacion)
 
-    // ✅ Calcular tiempo en cada render (derivado, no almacenado)
-    const tiempo = calcularTiempo(item.fecha_inicio, item.fecha_culminacion)
-
-    return (
-        <div className="space-y-4">
-            <FieldGrid cols={2}>
-                <div className="sm:col-span-2">
-                    <Input
-                        label="Nombre de la Entidad" required
-                        value={item.nombre_entidad || ""}
-                        {...validarProps("nombre_entidad", item.nombre_entidad)}
-                        onChange={(e) => handleChange("nombre_entidad", e.target.value)}
-                        placeholder="Ej: Gobierno Regional de Apurímac"
-                    />
-                </div>
-                <Input
-                    label="Cargo Desempeñado" required
-                    value={item.cargo || ""}
-                    {...validarProps("cargo", item.cargo)}
-                    onChange={(e) => handleChange("cargo", e.target.value)}
-                    placeholder="Ej: Analista de Sistemas"
-                />
-                <Input
-                    label="Documento que Acredita"
-                    value={item.documento_acredita || ""}
-                    onChange={(e) => set("documento_acredita", e.target.value)}
-                    placeholder="Ej: Resolución N° 045-2012"
-                />
-            </FieldGrid>
-
-            <FieldGrid cols={3}>
-                <Input
-                    label="Fecha de Inicio" required type="date"
-                    value={item.fecha_inicio || ""}
-                    {...validarProps("fecha_inicio", item.fecha_inicio)}
-                    onChange={(e) => handleChange("fecha_inicio", e.target.value)}
-                />
-                <Input
-                    label="Fecha de Culminación" type="date"
-                    value={item.fecha_culminacion || ""}
-                    onChange={(e) => set("fecha_culminacion", e.target.value)}
-                    placeholder="Dejar vacío si es actual"
-                />
-                <div className="space-y-0.5">
-                    <label className="input-label">Tiempo en el Cargo</label>
-                    <div className="input-field bg-slate-50 text-slate-500 text-xs">
-                        {tiempo || "Se calcula automáticamente"}
-                    </div>
-                </div>
-            </FieldGrid>
+  return (
+    <div className="space-y-4">
+      <FieldGrid cols={2}>
+        <div className="sm:col-span-2">
+          <Input label="Nombre de la Entidad" required
+            placeholder="Ej: Gobierno Regional de Apurímac"
+            {...campo("nombre_entidad")} />
         </div>
-    )
+        <Input label="Cargo Desempeñado" required
+          placeholder="Ej: Analista de Sistemas"
+          {...campo("cargo")} />
+        <Input label="Documento que Acredita"
+          placeholder="Ej: Resolución N° 045-2012"
+          value={item.documento_acredita ?? ""}
+          onChange={(e) => onChange("documento_acredita", e.target.value)}
+          tocado={!!item.documento_acredita}
+          valido={!!item.documento_acredita}
+        />
+      </FieldGrid>
+
+      <FieldGrid cols={2}>
+        <Input label="Fecha de Inicio" required type="date"
+          {...campo("fecha_inicio")} />
+        <Input label="Fecha de Culminación" type="date"
+          value={item.fecha_culminacion ?? ""}
+          onChange={(e) => onChange("fecha_culminacion", e.target.value)}
+          tocado={!!item.fecha_culminacion}
+          valido={!!item.fecha_culminacion}
+        />
+      </FieldGrid>
+
+      {tiempo && (
+        <div className="px-3 py-2 bg-primary-50 border border-primary-100
+                        rounded-lg text-xs text-primary-700 font-medium">
+          ⏱ Tiempo en el cargo: {tiempo}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Formulario experiencia docente ─────────────────────────
-function FormExpDocente({ item, onActualizar }) {
-    const set = (campo, valor) => onActualizar(campo, valor)
+function FormExpDocente({ item, onChange }) {
+  const tocadosIniciales = Object.fromEntries(
+    Object.keys(reglasExpDocente).map((k) => [k, !!item[k]])
+  )
+  const { props: vProps } = useValidacion(reglasExpDocente, tocadosIniciales)
 
-    // ── Hook de validación en tiempo real ─────────────────
-    const { props: validarProps, validar } = useValidacion(reglasExpDocente)
+  const campo = (nombre) => ({
+    value: item[nombre] ?? "",
+    ...vProps(nombre, item[nombre]),
+    onChange: (e) => {
+      vProps(nombre, item[nombre]).onChange(e)
+      onChange(nombre, e.target.value)
+    },
+  })
 
-    const handleChange = (campo, valor) => {
-        set(campo, valor)
-        validar(campo, valor)
-    }
+  const tiempo = calcularTiempo(item.fecha_inicio, item.fecha_culminacion)
 
-    // ✅ Calcular tiempo en cada render
-    const tiempo = calcularTiempo(item.fecha_inicio, item.fecha_culminacion)
-
-    return (
-        <div className="space-y-4">
-            <FieldGrid cols={2}>
-                <div className="sm:col-span-2">
-                    <Input
-                        label="Nombre de la Entidad / Universidad" required
-                        value={item.nombre_entidad || ""}
-                        {...validarProps("nombre_entidad", item.nombre_entidad)}
-                        onChange={(e) => handleChange("nombre_entidad", e.target.value)}
-                        placeholder="Ej: Universidad Nacional del Cusco"
-                    />
-                </div>
-                <Input
-                    label="Categoría Docente"
-                    value={item.categoria || ""}
-                    onChange={(e) => set("categoria", e.target.value)}
-                    placeholder="Ej: Principal, Asociado, Auxiliar"
-                />
-                <Input
-                    label="Documento que Acredita"
-                    value={item.documento_acredita || ""}
-                    onChange={(e) => set("documento_acredita", e.target.value)}
-                    placeholder="Ej: Resolución N° 120-2015"
-                />
-            </FieldGrid>
-
-            <FieldGrid cols={3}>
-                <Input
-                    label="Fecha de Inicio" required type="date"
-                    value={item.fecha_inicio || ""}
-                    {...validarProps("fecha_inicio", item.fecha_inicio)}
-                    onChange={(e) => handleChange("fecha_inicio", e.target.value)}
-                />
-                <Input
-                    label="Fecha de Culminación" type="date"
-                    value={item.fecha_culminacion || ""}
-                    onChange={(e) => set("fecha_culminacion", e.target.value)}
-                    placeholder="Dejar vacío si es actual"
-                />
-                <div className="space-y-0.5">
-                    <label className="input-label">Tiempo en el Cargo</label>
-                    <div className="input-field bg-slate-50 text-slate-500 text-xs">
-                        {tiempo || "Se calcula automáticamente"}
-                    </div>
-                </div>
-            </FieldGrid>
+  return (
+    <div className="space-y-4">
+      <FieldGrid cols={2}>
+        <div className="sm:col-span-2">
+          <Input label="Nombre de la Entidad / Universidad" required
+            placeholder="Ej: Universidad Nacional del Cusco"
+            {...campo("nombre_entidad")} />
         </div>
-    )
+        <Input label="Categoría Docente"
+          placeholder="Ej: Principal, Asociado, Auxiliar"
+          value={item.categoria ?? ""}
+          onChange={(e) => onChange("categoria", e.target.value)}
+          tocado={!!item.categoria}
+          valido={!!item.categoria}
+        />
+        <Input label="Documento que Acredita"
+          placeholder="Ej: Resolución N° 120-2015"
+          value={item.documento_acredita ?? ""}
+          onChange={(e) => onChange("documento_acredita", e.target.value)}
+          tocado={!!item.documento_acredita}
+          valido={!!item.documento_acredita}
+        />
+      </FieldGrid>
+
+      <FieldGrid cols={2}>
+        <Input label="Fecha de Inicio" required type="date"
+          {...campo("fecha_inicio")} />
+        <Input label="Fecha de Culminación" type="date"
+          value={item.fecha_culminacion ?? ""}
+          onChange={(e) => onChange("fecha_culminacion", e.target.value)}
+          tocado={!!item.fecha_culminacion}
+          valido={!!item.fecha_culminacion}
+        />
+      </FieldGrid>
+
+      {tiempo && (
+        <div className="px-3 py-2 bg-primary-50 border border-primary-100
+                        rounded-lg text-xs text-primary-700 font-medium">
+          ⏱ Tiempo en el cargo: {tiempo}
+        </div>
+      )}
+    </div>
+  )
 }
 
-// ── Sección reutilizable con lista de items ────────────────
+// ── Card compacta de experiencia ───────────────────────────
+function ExpRow({ item, onEditar, onEliminar, tipo }) {
+  const tiempo = calcularTiempo(item.fecha_inicio, item.fecha_culminacion)
+  const esActual = !item.fecha_culminacion
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3
+                    border border-slate-200 rounded-xl hover:border-slate-300
+                    hover:bg-slate-50 transition-colors">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center
+                        justify-center shrink-0">
+          <Building size={14} className="text-primary-600" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-slate-800 truncate">
+              {item.nombre_entidad || `Registro ${item.orden}`}
+            </p>
+            {esActual && (
+              <span className="text-xs px-1.5 py-0.5 rounded-full font-medium
+                               bg-green-100 text-green-700 shrink-0">
+                Actual
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            {(item.cargo || item.categoria) && (
+              <span className="text-xs text-slate-500 truncate">
+                {item.cargo || item.categoria}
+              </span>
+            )}
+            {tiempo && (
+              <span className="text-xs text-slate-400 shrink-0">
+                · {tiempo}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        <button type="button" onClick={onEditar}
+          className="p-1.5 text-primary-400 hover:text-primary-600
+                     hover:bg-primary-50 rounded-lg transition-colors"
+          title="Editar">
+          <Pencil size={14} />
+        </button>
+        <button type="button" onClick={onEliminar}
+          className="p-1.5 text-red-400 hover:text-red-600
+                     hover:bg-red-50 rounded-lg transition-colors"
+          title="Eliminar">
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Sección reutilizable ───────────────────────────────────
 function SeccionExperiencia({
-    titulo, subtitulo, icono: Icono, color,
-    items, limite, onAgregar, onEliminar, onActualizar,
-    renderForm, badgeFn,
+  titulo, subtitulo, icono: Icono,
+  items, limite, onAgregar, onEditar, onEliminar,
 }) {
-    return (
-        <div className="form-card">
-            <div className="flex items-start justify-between mb-4">
-                <SectionTitle
-                    icono={Icono}
-                    titulo={titulo}
-                    subtitulo={`${subtitulo} · ${items.length}/${limite} registrados`}
-                />
-                {items.length < limite && (
-                    <button
-                        type="button"
-                        onClick={onAgregar}
-                        className="btn-secondary text-xs px-3 py-1.5 gap-1 shrink-0 mt-0.5"
-                    >
-                        <Plus size={12} /> Agregar
-                    </button>
-                )}
-            </div>
+  return (
+    <div className="form-card">
+      <div className="flex items-start justify-between mb-4">
+        <SectionTitle
+          icono={Icono}
+          titulo={titulo}
+          subtitulo={`${subtitulo} · ${items.length}/${limite} registrados`}
+        />
+        {items.length < limite && (
+          <button type="button" onClick={onAgregar}
+            className="btn-secondary text-xs px-3 py-1.5 gap-1 shrink-0 mt-0.5">
+            <Plus size={12} /> Agregar
+          </button>
+        )}
+      </div>
 
-            {items.length === 0 ? (
-                <div className="text-center py-6 space-y-2">
-                    <Icono size={28} className="text-slate-200 mx-auto" />
-                    <p className="text-xs text-slate-400 italic">
-                        No hay registros aún — haga clic en "Agregar" para ingresar
-                    </p>
-                </div>
-            ) : (
-                <div className="space-y-2">
-                    {items.map((item) => (
-                        <ExpCard
-                            key={item._index}
-                            titulo={item.nombre_entidad || `Registro ${item.orden}`}
-                            subtitulo={item.cargo || item.categoria || "Sin cargo definido"}
-                            badge={badgeFn ? badgeFn(item) : null}
-                            onEliminar={() => onEliminar(item._index)}
-                        >
-                            {renderForm(item)}
-                        </ExpCard>
-                    ))}
-                </div>
-            )}
+      {items.length === 0 ? (
+        <div className="text-center py-6 space-y-2">
+          <Icono size={28} className="text-slate-200 mx-auto" />
+          <p className="text-xs text-slate-400 italic">
+            No hay registros — haga clic en "Agregar" para ingresar
+          </p>
         </div>
-    )
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <ExpRow
+              key={item._index}
+              item={item}
+              onEditar={() => onEditar(item._index)}
+              onEliminar={() => onEliminar(item._index)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
-// ══ Componente principal ═══════════════════════════════════
+// ── Componente principal ───────────────────────────────────
 export default function Step5Experiencia({
-    expLaboral, expDocente, tipoPersonal,
-    onChangeLaboral, onChangeDocente,
+  expLaboral, expDocente, tipoPersonal,
+  onChangeLaboral, onChangeDocente,
 }) {
+  // ── Estado del modal ─────────────────────────────────
+  const [modal, setModal] = useState({
+    visible: false,
+    tipo: null,       // "estatal" | "privada" | "docente"
+    index: null,
+    item: null,
+  })
 
-    const porTipo = (tipo) => expLaboral
-        .map((e, i) => ({ ...e, _index: i }))
-        .filter((e) => e.tipo_institucion === tipo)
+  // ── Abrir modal ───────────────────────────────────────
+  const abrirAgregar = (tipo) => {
+    const vacio = tipo === "docente"
+      ? EXP_DOCENTE_VACIA(expDocente.length + 1)
+      : EXP_LABORAL_VACIA(
+          tipo === "estatal" ? "Estatal" : "Privada",
+          expLaboral.filter((e) =>
+            e.tipo_institucion === (tipo === "estatal" ? "Estatal" : "Privada")
+          ).length + 1
+        )
+    setModal({ visible: true, tipo, index: null, item: vacio })
+  }
 
-    const agregarLaboral = (tipo) => {
-        const existentes = expLaboral.filter((e) => e.tipo_institucion === tipo)
-        if (existentes.length >= 10) return
-        onChangeLaboral([...expLaboral, EXP_LABORAL_VACIA(tipo, existentes.length + 1)])
-    }
+  const abrirEditar = (tipo, index) => {
+    const item = tipo === "docente"
+      ? { ...expDocente[index] }
+      : { ...expLaboral[index] }
+    setModal({ visible: true, tipo, index, item })
+  }
 
-    const actualizarLaboral = (index, campo, valor) => {
-        const lista = [...expLaboral]
-        lista[index] = { ...lista[index], [campo]: valor }
-        onChangeLaboral(lista)
-    }
+  // ── Actualizar campo dentro del modal ─────────────────
+  const handleCampoModal = (campo, valor) => {
+    setModal((prev) => ({
+      ...prev,
+      item: { ...prev.item, [campo]: valor },
+    }))
+  }
 
-    const eliminarLaboral = (index) => {
-        onChangeLaboral(expLaboral.filter((_, i) => i !== index))
-    }
+  // ── Guardar ───────────────────────────────────────────
+  const handleGuardar = () => {
+    const { tipo, index, item } = modal
 
-    const expDocenteConIdx = expDocente.map((e, i) => ({ ...e, _index: i }))
-
-    const agregarDocente = () => {
-        if (expDocente.length >= 15) return
-        onChangeDocente([...expDocente, EXP_DOCENTE_VACIA(expDocente.length + 1)])
-    }
-
-    const actualizarDocente = (index, campo, valor) => {
+    if (tipo === "docente") {
+      if (!item.nombre_entidad?.trim() || !item.fecha_inicio) return
+      if (index !== null) {
         const lista = [...expDocente]
-        lista[index] = { ...lista[index], [campo]: valor }
+        lista[index] = item
         onChangeDocente(lista)
+      } else {
+        onChangeDocente([...expDocente, item])
+      }
+    } else {
+      if (!item.nombre_entidad?.trim() || !item.cargo?.trim() || !item.fecha_inicio) return
+      if (index !== null) {
+        const lista = [...expLaboral]
+        lista[index] = item
+        onChangeLaboral(lista)
+      } else {
+        onChangeLaboral([...expLaboral, item])
+      }
     }
+    setModal({ visible: false, tipo: null, index: null, item: null })
+  }
 
-    const eliminarDocente = (index) => {
-        onChangeDocente(expDocente.filter((_, i) => i !== index))
-    }
+  const handleCancelar = () => {
+    setModal({ visible: false, tipo: null, index: null, item: null })
+  }
 
-    const esDocente = tipoPersonal === "Docente"
-    const esAdministrativo = tipoPersonal === "Administrativo"
-    const sinDefinir = !tipoPersonal
+  // ── Eliminar ──────────────────────────────────────────
+  const eliminarLaboral = (index) => {
+    onChangeLaboral(expLaboral.filter((_, i) => i !== index))
+  }
+  const eliminarDocente = (index) => {
+    onChangeDocente(expDocente.filter((_, i) => i !== index))
+  }
 
-    return (
-        <div className="space-y-5">
+  // ── Helpers ───────────────────────────────────────────
+  const porTipo = (tipo) => expLaboral
+    .map((e, i) => ({ ...e, _index: i }))
+    .filter((e) => e.tipo_institucion === tipo)
 
-            {sinDefinir && (
-                <div className="flex items-start gap-3 px-4 py-3 bg-amber-50
+  const expDocenteConIdx = expDocente.map((e, i) => ({ ...e, _index: i }))
+
+  const esDocente       = tipoPersonal === "Docente"
+  const esAdministrativo = tipoPersonal === "Administrativo"
+  const sinDefinir      = !tipoPersonal
+
+  // ── Título del modal ──────────────────────────────────
+  const titulosModal = {
+    estatal:  { agregar: "Agregar experiencia estatal",  editar: "Editar experiencia estatal"  },
+    privada:  { agregar: "Agregar experiencia privada",  editar: "Editar experiencia privada"  },
+    docente:  { agregar: "Agregar experiencia docente",  editar: "Editar experiencia docente"  },
+  }
+  const tituloModal = modal.tipo
+    ? (modal.index !== null
+        ? titulosModal[modal.tipo].editar
+        : titulosModal[modal.tipo].agregar)
+    : ""
+
+  return (
+    <div className="space-y-5">
+
+      {sinDefinir && (
+        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50
                         border border-amber-200 rounded-form">
-                    <Info size={15} className="text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-amber-700">
-                        No definió el tipo de personal en el Paso 2. Complete ese campo
-                        para ver si aplica la sección de experiencia docente.
-                    </p>
-                </div>
-            )}
-
-            <SeccionExperiencia
-                titulo="Experiencia en Institución Estatal"
-                subtitulo="Máximo 10 registros"
-                icono={Briefcase}
-                items={porTipo("Estatal")}
-                limite={10}
-                onAgregar={() => agregarLaboral("Estatal")}
-                onEliminar={eliminarLaboral}
-                onActualizar={actualizarLaboral}
-                badgeFn={(item) => item.fecha_culminacion ? null : "Actual"}
-                renderForm={(item) => (
-                    <FormExpLaboral
-                        item={item}
-                        onActualizar={(campo, valor) =>
-                            actualizarLaboral(item._index, campo, valor)
-                        }
-                    />
-                )}
-            />
-
-            <SeccionExperiencia
-                titulo="Experiencia en Institución Privada"
-                subtitulo="Máximo 10 registros"
-                icono={Briefcase}
-                items={porTipo("Privada")}
-                limite={10}
-                onAgregar={() => agregarLaboral("Privada")}
-                onEliminar={eliminarLaboral}
-                onActualizar={actualizarLaboral}
-                badgeFn={(item) => item.fecha_culminacion ? null : "Actual"}
-                renderForm={(item) => (
-                    <FormExpLaboral
-                        item={item}
-                        onActualizar={(campo, valor) =>
-                            actualizarLaboral(item._index, campo, valor)
-                        }
-                    />
-                )}
-            />
-
-            {esDocente && (
-                <SeccionExperiencia
-                    titulo="Experiencia Docente"
-                    subtitulo="Máximo 15 registros"
-                    icono={GraduationCap}
-                    items={expDocenteConIdx}
-                    limite={15}
-                    onAgregar={agregarDocente}
-                    onEliminar={eliminarDocente}
-                    onActualizar={actualizarDocente}
-                    badgeFn={(item) => item.fecha_culminacion ? null : "Actual"}
-                    renderForm={(item) => (
-                        <FormExpDocente
-                            item={item}
-                            onActualizar={(campo, valor) =>
-                                actualizarDocente(item._index, campo, valor)
-                            }
-                        />
-                    )}
-                />
-            )}
-
-            {esAdministrativo && (
-                <div className="flex items-start gap-3 px-4 py-3 bg-slate-50
-                        border border-slate-200 rounded-form">
-                    <Info size={15} className="text-slate-400 shrink-0 mt-0.5" />
-                    <p className="text-xs text-slate-500">
-                        La sección de <strong>Experiencia Docente</strong> no aplica
-                        para personal administrativo. Si en algún momento ejerció
-                        como docente, puede registrarlo en la experiencia laboral
-                        de institución estatal o privada.
-                    </p>
-                </div>
-            )}
-
+          <Info size={15} className="text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-700">
+            No definió el tipo de personal en el Paso 2. Complete ese campo
+            para ver si aplica la sección de experiencia docente.
+          </p>
         </div>
-    )
+      )}
+
+      <SeccionExperiencia
+        titulo="Experiencia en Institución Estatal"
+        subtitulo="Máximo 10 registros"
+        icono={Briefcase}
+        items={porTipo("Estatal")}
+        limite={10}
+        onAgregar={() => abrirAgregar("estatal")}
+        onEditar={(i) => abrirEditar("estatal", i)}
+        onEliminar={eliminarLaboral}
+      />
+
+      <SeccionExperiencia
+        titulo="Experiencia en Institución Privada"
+        subtitulo="Máximo 10 registros"
+        icono={Briefcase}
+        items={porTipo("Privada")}
+        limite={10}
+        onAgregar={() => abrirAgregar("privada")}
+        onEditar={(i) => abrirEditar("privada", i)}
+        onEliminar={eliminarLaboral}
+      />
+
+      {esDocente && (
+        <SeccionExperiencia
+          titulo="Experiencia Docente"
+          subtitulo="Máximo 15 registros"
+          icono={GraduationCap}
+          items={expDocenteConIdx}
+          limite={15}
+          onAgregar={() => abrirAgregar("docente")}
+          onEditar={(i) => abrirEditar("docente", i)}
+          onEliminar={eliminarDocente}
+        />
+      )}
+
+      {esAdministrativo && (
+        <div className="flex items-start gap-3 px-4 py-3 bg-slate-50
+                        border border-slate-200 rounded-form">
+          <Info size={15} className="text-slate-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-500">
+            La sección de <strong>Experiencia Docente</strong> no aplica
+            para personal administrativo.
+          </p>
+        </div>
+      )}
+
+      {/* ── Modal ───────────────────────────────────────── */}
+      {modal.item && (
+        <ModalFormulario
+          visible={modal.visible}
+          titulo={tituloModal}
+          subtitulo="Complete los datos de la experiencia laboral"
+          esEdicion={modal.index !== null}
+          onGuardar={handleGuardar}
+          onCancelar={handleCancelar}
+        >
+          {modal.tipo === "docente" ? (
+            <FormExpDocente
+              item={modal.item}
+              onChange={handleCampoModal}
+            />
+          ) : (
+            <FormExpLaboral
+              item={modal.item}
+              onChange={handleCampoModal}
+            />
+          )}
+        </ModalFormulario>
+      )}
+
+    </div>
+  )
 }
