@@ -1,5 +1,5 @@
 // Modal de confirmación antes de enviar la ficha
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import {
     AlertTriangle, X, Send, Loader2,
     User, Briefcase, CheckCircle2
@@ -12,6 +12,13 @@ export default function ModalConfirmacion({
     cargando,
     ficha,
 }) {
+    const [declaracion, setDeclaracion] = useState(false)
+
+    // Resetear checkbox al abrir el modal
+    useEffect(() => {
+        if (visible) setDeclaracion(false)
+    }, [visible])
+
     // Bloquear scroll del body cuando el modal está abierto
     useEffect(() => {
         if (visible) {
@@ -191,15 +198,29 @@ export default function ModalConfirmacion({
                         </div>
                     </div>
 
-                    {/* Declaración jurada */}
-                    <div className="flex items-start gap-2 px-3 py-2.5 bg-green-50
-                          border border-green-200 rounded-xl">
-                        <CheckCircle2 size={14} className="text-green-500 shrink-0 mt-0.5" />
-                        <p className="text-xs text-green-700 leading-relaxed">
-                            Al confirmar, declaro bajo juramento que la información
-                            es verídica conforme a la <strong>Ley N° 27444</strong>.
+                    {/* Declaración jurada — checkbox obligatorio */}
+                    <label className={`flex items-start gap-3 px-3 py-3 rounded-xl
+                                      border cursor-pointer transition-colors
+                        ${declaracion
+                            ? "bg-green-50 border-green-300"
+                            : "bg-amber-50 border-amber-200 hover:border-amber-300"
+                        }`}>
+                        <input
+                            type="checkbox"
+                            checked={declaracion}
+                            onChange={(e) => setDeclaracion(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 rounded border-slate-300
+                                       text-primary-600 focus:ring-primary-500
+                                       focus:ring-offset-0 cursor-pointer shrink-0"
+                        />
+                        <p className="text-xs leading-relaxed select-none
+                                      ${declaracion ? 'text-green-700' : 'text-amber-700'}">
+                            Declaro bajo juramento que la presente información expresa
+                            la verdad, de conformidad con la{" "}
+                            <strong>Ley N° 27444 — Ley de Procedimiento
+                            Administrativo General</strong>.
                         </p>
-                    </div>
+                    </label>
                 </div>
 
                 {/* ── Footer con botones ───────────────────────── */}
@@ -217,9 +238,12 @@ export default function ModalConfirmacion({
                     <button
                         type="button"
                         onClick={onConfirmar}
-                        disabled={cargando}
-                        className="btn-primary flex-1 justify-center
-                       bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                        disabled={cargando || !declaracion}
+                        className={`btn-primary flex-1 justify-center transition-all
+                            ${!declaracion
+                                ? "opacity-50 cursor-not-allowed bg-slate-400 hover:bg-slate-400"
+                                : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                            }`}
                     >
                         {cargando
                             ? <><Loader2 size={15} className="animate-spin" /> Enviando...</>
