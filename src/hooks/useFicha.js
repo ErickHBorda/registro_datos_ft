@@ -220,33 +220,15 @@ export function useFicha() {
   const pasoAnterior  = useCallback(() =>
     setPasoActual((p) => Math.max(p - 1, 1)), [])
 
-  // ── Progreso: calculado externamente en FormularioPage ────
-  // Se expone una función helper para que FormularioPage
-  // calcule el porcentaje con acceso a estado local (foto, etc.)
+  // ── Progreso: pasos completados sobre total ───────────────
+  // Retorna el % de pasos ya superados (anteriores al actual).
+  // Simple, honesto y nunca confunde al usuario.
   const getCamposObligatoriosPaso = useCallback((paso) => {
-    const p = ficha.personal
-    const l = ficha.datos_laborales
-    const camposPorPaso = {
-      1: [
-        p.apellido_paterno, p.apellido_materno, p.nombres,
-        p.dni, p.sexo, p.fecha_nacimiento, p.estado_civil,
-        p.nac_departamento, p.nac_provincia, p.nac_distrito,
-        p.celular, p.email_personal_1, p.dom_direccion,
-        p.banco, p.cuenta_numero, p.cuenta_cci,
-        // foto se inyecta desde FormularioPage como campo extra
-      ],
-      2: [
-        l.dependencia, l.cargo, l.fecha_ingreso,
-        l.email_institucional, l.condicion, l.tipo_personal,
-      ],
-      3: ficha.familiares.length > 0 ? ["ok"] : [],
-      4: ficha.formacion_academica.length > 0 ? ["ok"] : [],
-      5: ficha.experiencia_laboral.length > 0 ? ["ok"] : [],
-      6: ["ok"],
-      7: ["ok"],
-    }
-    return camposPorPaso[paso] || []
-  }, [ficha])
+    // Devolvemos un array de "ok" por cada paso completado
+    // FormularioPage calcula el % sobre PASOS_FICHA.length
+    const pasosCompletados = paso - 1
+    return Array(pasosCompletados).fill("ok")
+  }, [])
 
   // ── Preparar payload para el backend ─────────────────────
   const prepararPayload = useCallback(() => {

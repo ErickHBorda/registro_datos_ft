@@ -112,3 +112,8 @@
     @apply bg-slate-200 text-slate-500;
   }
 }
+
+@keyframes shrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}

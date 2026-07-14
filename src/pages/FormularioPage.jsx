@@ -2,8 +2,8 @@ import { useRef, useState, useMemo } from "react"
 import { Toaster, toast } from "react-hot-toast"
 import { useFicha } from "../hooks/useFicha"
 import { personalService, fotosService } from "../services/api"
-import { useModalBienvenida }    from "../hooks/useModal"
-import ModalBienvenida           from "../components/ui/ModalBienvenida"
+import { useModalBienvenida } from "../hooks/useModal"
+import ModalBienvenida from "../components/ui/ModalBienvenida"
 import { PASOS_FICHA } from "../utils/constants"
 import Stepper from "../components/ui/Stepper"
 import BarraProgreso from "../components/ui/BarraProgreso"
@@ -48,24 +48,18 @@ export default function FormularioPage() {
     getCamposObligatoriosPaso,
   } = useFicha()
 
-  // Rastrear si hay foto cargada (estado local que no persiste en localStorage)
-  const [tieneFoto, setTieneFoto] = useState(false)
-
   // Ref para subir al inicio al cambiar de paso
   const { mostrar: mostrarBienvenida, cerrar: cerrarBienvenida } =
     useModalBienvenida()
 
-  // Calcular porcentaje del paso actual incluyendo foto
+  // Progreso = pasos completados / total de pasos
+  // En paso 1 = 0%, paso 2 = 14%, ..., paso 7 = 86%
   const progresoPaso = useMemo(() => {
-    const campos = getCamposObligatoriosPaso(pasoActual)
-    // Para el paso 1 agregar la foto como campo extra
-    const camposConFoto = pasoActual === 1
-      ? [...campos, tieneFoto ? "ok" : ""]
-      : campos
-    if (camposConFoto.length === 0) return 100
-    const completos = camposConFoto.filter(Boolean).length
-    return Math.round((completos / camposConFoto.length) * 100)
-  }, [getCamposObligatoriosPaso, pasoActual, tieneFoto])
+    const totalPasos = 7
+    const pasosCompletados = getCamposObligatoriosPaso(pasoActual).length
+
+    return Math.round(((pasosCompletados + 1) / totalPasos) * 100)
+  }, [getCamposObligatoriosPaso, pasoActual])
 
   const topRef = useRef(null)
   const estadoGuardado = !!localStorage.getItem("unamba_ficha_2025")
@@ -325,7 +319,6 @@ export default function FormularioPage() {
           datos={ficha.personal}
           onChange={actualizarCampo}
           tocados={tocados}
-          onFotoCargada={(tiene) => setTieneFoto(tiene)}
         />
       )
       case 2: return (
