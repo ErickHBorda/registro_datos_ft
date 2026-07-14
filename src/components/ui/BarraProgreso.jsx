@@ -4,8 +4,8 @@ import { PASOS_FICHA } from "../../utils/constants"
 export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) {
   const totalPasos = PASOS_FICHA.length
   const porcentaje = progresoPaso ?? Math.round(((pasoActual - 1) / (totalPasos - 1)) * 100)
-  const pasoInfo   = PASOS_FICHA[pasoActual - 1]
-  const pasoSig    = PASOS_FICHA[pasoActual] || null
+  const pasoInfo = PASOS_FICHA[pasoActual - 1]
+  const pasoSig = PASOS_FICHA[pasoActual] || null
 
   return (
     <div className="fixed top-0 left-0 right-0 z-30 bg-white shadow-md">
@@ -13,47 +13,87 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
       {/* ══ FRANJA SUPERIOR ════════════════════════════════ */}
       <div className="bg-gradient-to-r from-unamba-blue via-primary-700
                       to-primary-600">
-        <div className="max-w-3xl mx-auto px-4 py-2.5
-                        flex items-center justify-between gap-4">
+        <div className="max-w-3xl mx-auto px-4 py-2
+                        flex items-center justify-between gap-3">
 
-          {/* Paso actual con ícono animado */}
+          {/* ── Lado izquierdo: Logo + Info institucional ── */}
           <div className="flex items-center gap-3 min-w-0">
+
+            {/* Logo UNAMBA */}
+            <div className="w-14 h-14 rounded-full shrink-0 shadow-lg
+                            bg-white p-1 flex items-center justify-center">
+              <img
+                src="/logo-unamba.png"
+                alt="UNAMBA"
+                className="w-full h-full object-contain p-1"
+              />
+            </div>
+
+            {/* Separador vertical */}
+            <div className="w-px h-8 bg-white/20 shrink-0" />
+
+            {/* Nombre institución */}
+            <div className="min-w-0 hidden sm:block">
+              <p className="text-white font-bold text-xs leading-tight truncate">
+                Universidad Nacional Micaela Bastidas
+              </p>
+              <p className="text-blue-200 text-xs leading-tight truncate">
+                Of. RR.HH. — Escalafón y Asuntos Laborales
+              </p>
+            </div>
+
+            {/* Versión móvil: solo sigla */}
+            <div className="min-w-0 sm:hidden">
+              <p className="text-white font-bold text-xs leading-tight">
+                UNAMBA
+              </p>
+              <p className="text-blue-200 text-xs leading-tight">
+                RR.HH.
+              </p>
+            </div>
+          </div>
+
+          {/* ── Centro: Paso actual ─────────────────────── */}
+          <div className="flex items-center gap-2 shrink-0">
             {/* Badge de paso */}
-            <div className="relative shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-white/15 border
-                              border-white/25 flex items-center justify-center">
-                <span className="text-white font-black text-sm">
+            <div className="relative">
+              <div
+                className="w-11 h-11 rounded-xl bg-white/15 border
+               border-white/25 flex items-center justify-center"
+              >
+                <span className="text-white font-black text-lg">
                   {pasoActual}
                 </span>
               </div>
-              {/* Pulso animado en paso activo */}
-              <span className="absolute -top-0.5 -right-0.5 w-3 h-3
-                               rounded-full bg-green-400 border-2
-                               border-unamba-blue animate-pulse" />
+
+              <span
+                className="absolute -top-0.5 -right-0.5 w-3 h-3
+               rounded-full bg-green-400 border-2
+               border-unamba-blue animate-pulse"
+              />
             </div>
 
             <div className="min-w-0">
-              <p className="text-white font-bold text-sm truncate leading-tight">
+              <p className="text-white font-bold text-xs truncate leading-tight">
                 {pasoInfo.label}
               </p>
-              {pasoSig && (
+              {pasoSig ? (
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className="text-blue-300 text-xs">Siguiente:</span>
-                  <ChevronRight size={10} className="text-blue-400" />
+                  <ChevronRight size={9} className="text-blue-400" />
                   <span className="text-blue-200 text-xs truncate">
                     {pasoSig.label}
                   </span>
                 </div>
-              )}
-              {!pasoSig && (
+              ) : (
                 <p className="text-green-300 text-xs font-medium mt-0.5">
-                  ✓ Último paso — revise y envíe
+                  ✓ Último paso
                 </p>
               )}
             </div>
           </div>
 
-          {/* Porcentaje grande */}
+          {/* ── Lado derecho: Porcentaje ────────────────── */}
           <div className="shrink-0 text-right">
             <div className="flex items-end gap-0.5 justify-end">
               <span className="text-white font-black text-2xl leading-none">
@@ -65,6 +105,7 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
               {pasoActual} de {totalPasos} pasos
             </p>
           </div>
+
         </div>
       </div>
 
@@ -109,8 +150,8 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
 
             {PASOS_FICHA.map((paso) => {
               const completado = paso.id < pasoActual
-              const activo     = paso.id === pasoActual
-              const pendiente  = paso.id > pasoActual
+              const activo = paso.id === pasoActual
+              const pendiente = paso.id > pasoActual
 
               return (
                 <div
@@ -126,8 +167,8 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
                     title={completado
                       ? `Editar: ${paso.label}`
                       : activo
-                      ? `Paso actual: ${paso.label}`
-                      : paso.label
+                        ? `Paso actual: ${paso.label}`
+                        : paso.label
                     }
                     className={`
                       relative w-7 h-7 rounded-full flex items-center
@@ -139,10 +180,10 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
                            shadow-green-200 cursor-pointer
                            hover:scale-110 hover:shadow-green-300`
                         : activo
-                        ? `bg-gradient-to-br from-primary-500 to-primary-700
+                          ? `bg-gradient-to-br from-primary-500 to-primary-700
                            border-primary-600 text-white shadow-lg
                            shadow-primary-200 scale-110`
-                        : `bg-white border-slate-200 text-slate-300
+                          : `bg-white border-slate-200 text-slate-300
                            cursor-default`
                       }
                     `}
@@ -150,14 +191,14 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
                     {completado
                       ? <Check size={12} strokeWidth={3} />
                       : activo
-                      ? <span className="relative">
+                        ? <span className="relative">
                           {paso.id}
                           {/* Anillo pulsante en paso activo */}
                           <span className="absolute -inset-3 rounded-full
                                            border-2 border-primary-400/40
                                            animate-ping" />
                         </span>
-                      : paso.id
+                        : paso.id
                     }
                   </button>
 
@@ -169,8 +210,8 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
                       ${activo
                         ? "text-primary-700 font-semibold scale-105"
                         : completado
-                        ? "text-green-600"
-                        : "text-slate-300"
+                          ? "text-green-600"
+                          : "text-slate-300"
                       }
                     `}
                     style={{ fontSize: "0.58rem", maxWidth: "52px" }}
@@ -182,30 +223,6 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) 
             })}
           </div>
         </div>
-      </div>
-
-      {/* ══ BARRA INFERIOR DE SEGMENTOS ══════════════════════
-          Muestra visualmente cuántos pasos quedan como bloques */}
-      <div className="flex h-1">
-        {PASOS_FICHA.map((paso) => {
-          const completado = paso.id < pasoActual
-          const activo     = paso.id === pasoActual
-          return (
-            <div
-              key={paso.id}
-              className={`
-                flex-1 transition-all duration-500
-                ${completado
-                  ? "bg-green-400"
-                  : activo
-                  ? "bg-primary-400 animate-pulse"
-                  : "bg-slate-100"
-                }
-                ${paso.id < totalPasos ? "border-r border-white" : ""}
-              `}
-            />
-          )
-        })}
       </div>
 
     </div>
