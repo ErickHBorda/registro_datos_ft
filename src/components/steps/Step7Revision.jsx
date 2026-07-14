@@ -133,8 +133,8 @@ export default function Step7Revision({ ficha, onIrAlPaso }) {
 
             {/* ── Banner de estado general ───────────────────── */}
             <div className={`rounded-form p-4 border ${listo
-                    ? "bg-green-50 border-green-200"
-                    : "bg-amber-50 border-amber-200"
+                ? "bg-green-50 border-green-200"
+                : "bg-amber-50 border-amber-200"
                 }`}>
                 <div className="flex items-center gap-3">
                     {listo
@@ -419,7 +419,6 @@ export default function Step7Revision({ ficha, onIrAlPaso }) {
                     </div>
                 </div>
             </div>
-
         </div>
     )
 }

@@ -1,9 +1,9 @@
 import { Check, ChevronRight } from "lucide-react"
 import { PASOS_FICHA } from "../../utils/constants"
 
-export default function BarraProgreso({ pasoActual, onIrAlPaso }) {
+export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) {
   const totalPasos = PASOS_FICHA.length
-  const porcentaje = Math.round(((pasoActual - 1) / (totalPasos - 1)) * 100)
+  const porcentaje = progresoPaso ?? Math.round(((pasoActual - 1) / (totalPasos - 1)) * 100)
   const pasoInfo   = PASOS_FICHA[pasoActual - 1]
   const pasoSig    = PASOS_FICHA[pasoActual] || null
 

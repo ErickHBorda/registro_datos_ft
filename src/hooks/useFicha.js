@@ -1,7 +1,7 @@
 // src/hooks/useFicha.js
 // Estado global del formulario con persistencia en localStorage
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 
 const STORAGE_KEY = "unamba_ficha_2025"
 
@@ -27,6 +27,7 @@ const ESTADO_INICIAL = {
     dom_direccion:      "",
     dom_referencia:     "",
     tipo_vivienda:      "",
+    tipo_vivienda_otro: "",
     ruc:                "",
     licencia_conducir:  "",
     afiliacion_essalud: "",
@@ -42,6 +43,8 @@ const ESTADO_INICIAL = {
     colegio_prof_fecha:  "",
     sistema_pension:    "",
     afp_nombre:         "",
+    codigo_afiliacion:  "",
+    fecha_afiliacion:   "",
     tiene_discapacidad: false,
     conadis_registro:   "",
     realizo_serv_militar:      false,
@@ -188,6 +191,34 @@ export function useFicha() {
   const pasoAnterior  = useCallback(() =>
     setPasoActual((p) => Math.max(p - 1, 1)), [])
 
+  // ── Progreso: calculado externamente en FormularioPage ────
+  // Se expone una función helper para que FormularioPage
+  // calcule el porcentaje con acceso a estado local (foto, etc.)
+  const getCamposObligatoriosPaso = useCallback((paso) => {
+    const p = ficha.personal
+    const l = ficha.datos_laborales
+    const camposPorPaso = {
+      1: [
+        p.apellido_paterno, p.apellido_materno, p.nombres,
+        p.dni, p.sexo, p.fecha_nacimiento, p.estado_civil,
+        p.nac_departamento, p.nac_provincia, p.nac_distrito,
+        p.celular, p.email_personal_1, p.dom_direccion,
+        p.banco, p.cuenta_numero, p.cuenta_cci,
+        // foto se inyecta desde FormularioPage como campo extra
+      ],
+      2: [
+        l.dependencia, l.cargo, l.fecha_ingreso,
+        l.email_institucional, l.condicion, l.tipo_personal,
+      ],
+      3: ficha.familiares.length > 0 ? ["ok"] : [],
+      4: ficha.formacion_academica.length > 0 ? ["ok"] : [],
+      5: ficha.experiencia_laboral.length > 0 ? ["ok"] : [],
+      6: ["ok"],
+      7: ["ok"],
+    }
+    return camposPorPaso[paso] || []
+  }, [ficha])
+
   // ── Preparar payload para el backend ─────────────────────
   const prepararPayload = useCallback(() => {
     const limpiar     = (valor) => valor === "" ? null : valor
@@ -198,12 +229,13 @@ export function useFicha() {
 
     const camposOpcionalesPersonal = [
       "libreta_militar", "telefono_fijo", "email_personal_2",
-      "dom_tipo_via", "dom_referencia", "tipo_vivienda",
+      "dom_tipo_via", "dom_referencia", "tipo_vivienda", "tipo_vivienda_otro",
       "ruc", "licencia_conducir", "afiliacion_essalud",
       "grupo_sanguineo", "banco", "cuenta_numero", "cuenta_cci",
       "denominacion_prof", "abreviatura_prof", "colegio_prof_nombre",
       "colegio_prof_numero", "sistema_pension", "afp_nombre",
       "conadis_registro", "serv_militar_rama", "serv_militar_cargo",
+      "codigo_afiliacion",
     ]
     camposOpcionalesPersonal.forEach((c) => {
       personal[c] = limpiar(personal[c])
@@ -214,6 +246,7 @@ export function useFicha() {
       "colegio_prof_fecha",
       "serv_militar_fecha_inicio",
       "serv_militar_fecha_fin",
+      "fecha_afiliacion",
     ]
     fechasPersonal.forEach((c) => {
       personal[c] = limpiarFecha(personal[c])
@@ -293,6 +326,7 @@ export function useFicha() {
     personalId,
     completado,
     tocados,
+    getCamposObligatoriosPaso, 
     setCargando,
     setPersonalId,
     setCompletado,

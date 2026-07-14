@@ -12,8 +12,24 @@ import {
   SISTEMA_PENSION, AFP, RAMA_MILITAR, NIVEL_IDIOMA,
 } from "../../utils/constants"
 
-export default function Step1Personal({ datos, onChange, tocados: tocadosGlobales = {} }) {
-  const [fotoPreview, setFotoPreview] = useState(null)
+export default function Step1Personal({ datos, onChange, tocados: tocadosGlobalesRaw = {}, onFotoCargada }) {
+  // Limpiar prefijo "personal." de las keys para que useValidacion las reconozca
+  const tocadosGlobales = Object.fromEntries(
+    Object.entries(tocadosGlobalesRaw)
+      .filter(([k]) => k.startsWith("personal."))
+      .map(([k, v]) => [k.replace("personal.", ""), v])
+  )
+  const [fotoPreview, setFotoPreview] = useState(() => {
+    if (datos._foto_archivo instanceof File) {
+      onFotoCargada?.(true)
+      return URL.createObjectURL(datos._foto_archivo)
+    }
+    if (datos.foto_url) {
+      onFotoCargada?.(true)
+      return datos.foto_url
+    }
+    return null
+  })
   const [mostrarTarjeta, setMostrarTarjeta] = useState(false)
 
   const set = (campo, valor) => onChange("personal", campo, valor)
@@ -52,6 +68,8 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
     email_personal_1: {
       requerido: true, mensajeRequerido: "El email es obligatorio",
       patron: /^[^@]+@[^@]+\.[^@]+$/, mensajePatron: "Email inválido",
+      validar: (v) => /edu\.pe$/i.test(v)
+        ? "Use su correo personal, no el institucional" : true,
     },
     dom_direccion: {
       requerido: true, mensajeRequerido: "La dirección es obligatoria",
@@ -71,6 +89,7 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
     },
     cuenta_numero: {
       requerido: true, mensajeRequerido: "El número de cuenta es obligatorio",
+      patron: /^\d{6,20}$/, mensajePatron: "Solo dígitos, entre 6 y 20 caracteres",
     },
     cuenta_cci: {
       requerido: true, mensajeRequerido: "El CCI es obligatorio",
@@ -96,7 +115,11 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
     ruc: {
       patron: /^\d{11}$/, mensajePatron: "El RUC debe tener 11 dígitos",
     },
-  })
+    tipo_vivienda_otro: {
+      requerido: datos.tipo_vivienda === "Otro",
+      mensajeRequerido: "Especifique el tipo de vivienda",
+    },
+  }, tocadosGlobales)
 
   // ── Helper combinado: actualiza estado + valida ────────
   const campo = (nombre) => ({
@@ -115,6 +138,7 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
     if (!archivo) return
     setFotoPreview(URL.createObjectURL(archivo))
     set("_foto_archivo", archivo)
+    onFotoCargada?.(true)
   }
 
   // ── Idiomas ────────────────────────────────────────────
@@ -163,25 +187,29 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
         <div className="flex items-start gap-5 mb-5">
           {/* Foto */}
           <div className="shrink-0">
-            <div className="w-24 h-28 rounded-lg border-2 border-dashed
-                            border-slate-300 bg-slate-50 overflow-hidden
-                            flex items-center justify-center relative
-                            group cursor-pointer hover:border-primary-400
-                            transition-colors">
+            <div className={`w-24 h-28 rounded-lg border-2 border-dashed
+                            overflow-hidden flex items-center justify-center
+                            relative group cursor-pointer transition-colors
+                            ${fotoPreview
+                              ? "border-green-400 bg-green-50"
+                              : "border-red-300 bg-red-50 hover:border-red-400"
+                            }`}>
               {fotoPreview
                 ? <img src={fotoPreview} alt="Foto"
-                  className="w-full h-full object-cover" />
+                    className="w-full h-full object-cover" />
                 : <div className="text-center">
-                  <Camera size={22} className="text-slate-300 mx-auto mb-1" />
-                  <span className="text-xs text-slate-400">Foto</span>
-                </div>
+                    <Camera size={22} className="text-red-300 mx-auto mb-1" />
+                    <span className="text-xs text-red-400">Requerida</span>
+                  </div>
               }
               <input type="file" accept="image/jpeg,image/png,image/webp"
                 onChange={handleFoto}
                 className="absolute inset-0 opacity-0 cursor-pointer" />
             </div>
-            <p className="text-xs text-slate-400 mt-1 text-center">
-              JPG/PNG<br />Máx. 5MB
+            <p className="text-xs mt-1 text-center
+                          ${fotoPreview ? 'text-green-600' : 'text-red-400'}">
+              {fotoPreview ? "✓ Foto cargada" : "Obligatoria"}<br />
+              <span className="text-slate-400">JPG/PNG · Máx. 5MB</span>
             </p>
           </div>
 
@@ -210,9 +238,11 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
             }}
           />
           <Input label="Libreta Militar"
-            value={datos.libreta_militar}
+            value={datos.libreta_militar ?? ""}
             onChange={(e) => set("libreta_militar", e.target.value)}
-            placeholder="Opcional" />
+            placeholder="Opcional"
+            tocado={!!datos.libreta_militar}
+            valido={!!datos.libreta_militar} />
           <Select label="Sexo" required opciones={SEXO}
             {...campo("sexo")} />
         </FieldGrid>
@@ -230,8 +260,10 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
         <SectionTitle icono={Globe} titulo="Lugar de Nacimiento" />
         <FieldGrid cols={2}>
           <Input label="País" required
-            value={datos.nac_pais}
-            onChange={(e) => set("nac_pais", e.target.value)} />
+            value={datos.nac_pais ?? ""}
+            onChange={(e) => set("nac_pais", e.target.value)}
+            tocado={!!datos.nac_pais}
+            valido={!!datos.nac_pais} />
           <Input label="Departamento" required
             placeholder="Ej: Apurímac" {...campo("nac_departamento")} />
           <Input label="Provincia" required
@@ -246,10 +278,12 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
         <SectionTitle icono={Phone} titulo="Medios de Contacto" />
         <FieldGrid cols={2}>
           <Input label="Teléfono Fijo"
-            value={datos.telefono_fijo}
+            value={datos.telefono_fijo ?? ""}
             onChange={(e) => set("telefono_fijo",
               e.target.value.replace(/\D/g, ""))}
-            placeholder="Ej: 083321456" maxLength={9} />
+            placeholder="Ej: 083321456" maxLength={9}
+            tocado={!!datos.telefono_fijo}
+            valido={!!datos.telefono_fijo} />
           <Input label="Celular" required maxLength={9}
             placeholder="Ej: 987654321"
             {...campo("celular")}
@@ -264,9 +298,11 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
           <Input label="Email Personal 1" required type="email"
             placeholder="correo@gmail.com" {...campo("email_personal_1")} />
           <Input label="Email Personal 2" type="email"
-            value={datos.email_personal_2}
+            value={datos.email_personal_2 ?? ""}
             onChange={(e) => set("email_personal_2", e.target.value)}
-            placeholder="Opcional" />
+            placeholder="Opcional"
+            tocado={!!datos.email_personal_2}
+            valido={!!datos.email_personal_2} />
         </FieldGrid>
       </div>
 
@@ -280,8 +316,10 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
             { value: "Psje", label: "Psje." },
             { value: "Otro", label: "Otro" },
           ]}
-            value={datos.dom_tipo_via}
-            onChange={(e) => set("dom_tipo_via", e.target.value)} />
+            value={datos.dom_tipo_via ?? ""}
+            onChange={(e) => set("dom_tipo_via", e.target.value)}
+            tocado={!!datos.dom_tipo_via}
+            valido={!!datos.dom_tipo_via} />
           <div className="sm:col-span-2">
             <Input label="Dirección" required
               placeholder="Ej: Av. Arenas 123" {...campo("dom_direccion")} />
@@ -289,12 +327,24 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
         </FieldGrid>
         <FieldGrid cols={2} className="mt-4">
           <Input label="Referencia"
-            value={datos.dom_referencia}
+            value={datos.dom_referencia ?? ""}
             onChange={(e) => set("dom_referencia", e.target.value)}
-            placeholder="Ej: Frente al parque" />
+            placeholder="Ej: Frente al parque"
+            tocado={!!datos.dom_referencia}
+            valido={!!datos.dom_referencia} />
           <Select label="Tipo de Vivienda" opciones={TIPO_VIVIENDA}
-            value={datos.tipo_vivienda}
-            onChange={(e) => set("tipo_vivienda", e.target.value)} />
+            value={datos.tipo_vivienda ?? ""}
+            onChange={(e) => {
+              set("tipo_vivienda", e.target.value)
+              if (e.target.value !== "Otro") set("tipo_vivienda_otro", "")
+            }}
+            tocado={!!datos.tipo_vivienda}
+            valido={!!datos.tipo_vivienda} />
+          {datos.tipo_vivienda === "Otro" && (
+            <Input label="Especifique el tipo de vivienda" required
+              placeholder="Ej: Casa de familiares"
+              {...campo("tipo_vivienda_otro")} />
+          )}
         </FieldGrid>
       </div>
 
@@ -314,15 +364,21 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
             }}
           />
           <Input label="Licencia de Conducir"
-            value={datos.licencia_conducir}
+            value={datos.licencia_conducir ?? ""}
             onChange={(e) => set("licencia_conducir", e.target.value)}
-            placeholder="Ej: Q12345678" />
+            placeholder="Ej: Q12345678"
+            tocado={!!datos.licencia_conducir}
+            valido={!!datos.licencia_conducir} />
           <Input label="Afil. ESSALUD"
-            value={datos.afiliacion_essalud}
-            onChange={(e) => set("afiliacion_essalud", e.target.value)} />
+            value={datos.afiliacion_essalud ?? ""}
+            onChange={(e) => set("afiliacion_essalud", e.target.value)}
+            tocado={!!datos.afiliacion_essalud}
+            valido={!!datos.afiliacion_essalud} />
           <Select label="Grupo Sanguíneo" opciones={GRUPO_SANGUINEO}
-            value={datos.grupo_sanguineo}
-            onChange={(e) => set("grupo_sanguineo", e.target.value)} />
+            value={datos.grupo_sanguineo ?? ""}
+            onChange={(e) => set("grupo_sanguineo", e.target.value)}
+            tocado={!!datos.grupo_sanguineo}
+            valido={!!datos.grupo_sanguineo} />
           <div className="flex items-end pb-1">
             <Checkbox label="Donador/a de órganos"
               checked={datos.donador_organos}
@@ -365,7 +421,17 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
             <Input label="Banco" required
               placeholder="Ej: BCP, BBVA" {...campo("banco")} />
             <Input label="N° de Cuenta" required
-              {...campo("cuenta_numero")} />
+              maxLength={20}
+              placeholder="Solo dígitos"
+              {...campo("cuenta_numero")}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, "")
+                vProps("cuenta_numero", datos.cuenta_numero).onChange({
+                  ...e, target: { ...e.target, value: val }
+                })
+                set("cuenta_numero", val)
+              }}
+            />
             <Input label="CCI" required maxLength={20}
               placeholder="20 dígitos"
               {...campo("cuenta_cci")}
@@ -405,23 +471,33 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
           titulo="Denominación y Colegio Profesional" />
         <FieldGrid cols={2}>
           <Input label="Denominación Profesional"
-            value={datos.denominacion_prof}
+            value={datos.denominacion_prof ?? ""}
             onChange={(e) => set("denominacion_prof", e.target.value)}
-            placeholder="Ej: Ingeniero de Sistemas" />
+            placeholder="Ej: Ingeniero de Sistemas"
+            tocado={!!datos.denominacion_prof}
+            valido={!!datos.denominacion_prof} />
           <Input label="Abreviatura"
-            value={datos.abreviatura_prof}
+            value={datos.abreviatura_prof ?? ""}
             onChange={(e) => set("abreviatura_prof", e.target.value)}
-            placeholder="Ej: Ing." />
+            placeholder="Ej: Ing."
+            tocado={!!datos.abreviatura_prof}
+            valido={!!datos.abreviatura_prof} />
           <Input label="Colegio Profesional"
-            value={datos.colegio_prof_nombre}
+            value={datos.colegio_prof_nombre ?? ""}
             onChange={(e) => set("colegio_prof_nombre", e.target.value)}
-            placeholder="Ej: CIP" />
+            placeholder="Ej: CIP"
+            tocado={!!datos.colegio_prof_nombre}
+            valido={!!datos.colegio_prof_nombre} />
           <Input label="N° de Colegiatura"
-            value={datos.colegio_prof_numero}
-            onChange={(e) => set("colegio_prof_numero", e.target.value)} />
+            value={datos.colegio_prof_numero ?? ""}
+            onChange={(e) => set("colegio_prof_numero", e.target.value)}
+            tocado={!!datos.colegio_prof_numero}
+            valido={!!datos.colegio_prof_numero} />
           <Input label="Fecha de Colegiatura" type="date"
-            value={datos.colegio_prof_fecha}
-            onChange={(e) => set("colegio_prof_fecha", e.target.value)} />
+            value={datos.colegio_prof_fecha ?? ""}
+            onChange={(e) => set("colegio_prof_fecha", e.target.value)}
+            tocado={!!datos.colegio_prof_fecha}
+            valido={!!datos.colegio_prof_fecha} />
         </FieldGrid>
       </div>
 
@@ -430,15 +506,30 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
         <SectionTitle icono={CreditCard} titulo="Sistema de Pensiones" />
         <FieldGrid cols={2}>
           <Select label="Sistema de Pensiones" opciones={SISTEMA_PENSION}
-            value={datos.sistema_pension}
+            value={datos.sistema_pension ?? ""}
             onChange={(e) => {
               set("sistema_pension", e.target.value)
               if (e.target.value !== "AFP") set("afp_nombre", "")
-            }} />
+            }}
+            tocado={!!datos.sistema_pension}
+            valido={!!datos.sistema_pension} />
           {datos.sistema_pension === "AFP" && (
             <Select label="AFP" required opciones={AFP}
-              value={datos.afp_nombre}
-              onChange={(e) => set("afp_nombre", e.target.value)} />
+              value={datos.afp_nombre ?? ""}
+              onChange={(e) => set("afp_nombre", e.target.value)}
+              tocado={!!datos.afp_nombre}
+              valido={!!datos.afp_nombre} />
+          )}
+          {datos.sistema_pension && (
+            <>
+              <Input label="Código de Afiliación"
+                placeholder="Ej: 00123456"
+                {...campo("codigo_afiliacion")}
+              />
+              <Input label="Fecha de Afiliación" type="date"
+                {...campo("fecha_afiliacion")}
+              />
+            </>
           )}
         </FieldGrid>
       </div>
@@ -467,8 +558,10 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
             <Input label="Fecha de Inicio" required type="date"
               {...campo("serv_militar_fecha_inicio")} />
             <Input label="Fecha de Fin" type="date"
-              value={datos.serv_militar_fecha_fin}
-              onChange={(e) => set("serv_militar_fecha_fin", e.target.value)} />
+              value={datos.serv_militar_fecha_fin ?? ""}
+              onChange={(e) => set("serv_militar_fecha_fin", e.target.value)}
+              tocado={!!datos.serv_militar_fecha_fin}
+              valido={!!datos.serv_militar_fecha_fin} />
           </FieldGrid>
         )}
       </div>
@@ -511,7 +604,16 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
                   <Trash2 size={14} />
                 </button>
               </div>
-              {/* Alerta si incompleto */}
+              <div className="sm:w-1/2">
+                <Input
+                  label={i === 0 ? "Documento que acredita" : ""}
+                  placeholder="Ej: Certificado de estudios"
+                  value={item.documento_acredita ?? ""}
+                  onChange={(e) => actualizarIdioma(i, "documento_acredita", e.target.value)}
+                  tocado={!!item.documento_acredita}
+                  valido={!!item.documento_acredita}
+                />
+              </div>
               {idiomaIncompleto(item) && (
                 <p className="text-xs text-amber-600 flex items-center gap-1">
                   <AlertCircle size={11} />
@@ -564,6 +666,16 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
                     className="btn-danger mb-0.5 px-2.5 py-2">
                     <Trash2 size={14} />
                   </button>
+                </div>
+                <div className="sm:w-1/2">
+                  <Input
+                    label={i === 0 ? "Documento que acredita" : ""}
+                    placeholder="Ej: Certificado Microsoft"
+                    value={item.documento_acredita ?? ""}
+                    onChange={(e) => actualizarOfimatica(i, "documento_acredita", e.target.value)}
+                    tocado={!!item.documento_acredita}
+                    valido={!!item.documento_acredita}
+                  />
                 </div>
                 {ofimaticaIncompleta(item) && (
                   <p className="text-xs text-amber-600 flex items-center gap-1">

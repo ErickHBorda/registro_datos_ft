@@ -3,7 +3,8 @@ import { z } from "zod"
 const dniRegex    = /^\d{8}$/
 const rucRegex    = /^\d{11}$/
 const celularRegex = /^\d{9}$/
-const emailRegex  = /^[^@]+@[^@]+\.[^@]+$/
+const emailRegex        = /^[^@]+@[^@]+\.[^@]+$/
+const emailEduPeRegex   = /edu\.pe$/i
 
 // ── Sección 1: Datos Personales ────────────────────────────
 export const personalSchema = z.object({
@@ -34,7 +35,8 @@ export const personalSchema = z.object({
   grupo_sanguineo:    z.string().optional().or(z.literal("")),
   donador_organos:    z.boolean().default(false),
   banco:              z.string().optional().or(z.literal("")),
-  cuenta_numero:      z.string().optional().or(z.literal("")),
+  cuenta_numero:      z.string().regex(/^\d{6,20}$/, "Solo dígitos, entre 6 y 20")
+                        .optional().or(z.literal("")),
   cuenta_cci:         z.string().optional().or(z.literal("")),
   denominacion_prof:  z.string().optional().or(z.literal("")),
   abreviatura_prof:   z.string().optional().or(z.literal("")),
@@ -53,10 +55,12 @@ export const personalSchema = z.object({
   idiomas_nativos: z.array(z.object({
     idioma: z.string().min(1, "Ingrese el idioma"),
     nivel:  z.string().min(1, "Seleccione el nivel"),
+    documento_acredita: z.string().optional().or(z.literal("")),
   })).max(3, "Máximo 3 idiomas").default([]),
   ofimatica: z.array(z.object({
     programa: z.string().min(1, "Ingrese el programa"),
-    nivel:    z.string().min(1, "Seleccione el nivel"),
+    nivel: z.string().min(1, "Seleccione el nivel"),
+    documento_acredita: z.string().optional().or(z.literal("")),
   })).max(3, "Máximo 3 programas").default([]),
 })
 
@@ -124,14 +128,27 @@ export function validarPaso1(personal) {
   if (!personal.email_personal_1 ||
       !/^[^@]+@[^@]+\.[^@]+$/.test(personal.email_personal_1))
     errores.push("Email personal inválido")
+  if (personal.email_personal_1 &&
+      /edu\.pe$/i.test(personal.email_personal_1))
+    errores.push("Email 1: use su correo personal, no el institucional")
+  if (personal.email_personal_2 &&
+      /edu\.pe$/i.test(personal.email_personal_2))
+    errores.push("Email 2: use su correo personal, no el institucional")
   if (!personal.dom_direccion?.trim())
     errores.push("Dirección de domicilio es obligatoria")
+
+  // Foto obligatoria
+  if (!personal._foto_archivo && !personal.foto_url)
+    errores.push("La foto es obligatoria")
 
   // Cuenta bancaria obligatoria
   if (!personal.banco?.trim())
     errores.push("Banco es obligatorio")
   if (!personal.cuenta_numero?.trim())
     errores.push("Número de cuenta es obligatorio")
+  if (personal.cuenta_numero &&
+      !/^\d{6,20}$/.test(personal.cuenta_numero))
+    errores.push("N° de cuenta: solo dígitos, entre 6 y 20 caracteres")
   if (!personal.cuenta_cci || !/^\d{20}$/.test(personal.cuenta_cci))
     errores.push("CCI debe tener exactamente 20 dígitos")
 
@@ -147,6 +164,9 @@ export function validarPaso1(personal) {
     if (!personal.serv_militar_fecha_inicio)
       errores.push("Fecha de inicio del servicio militar es obligatoria")
   }
+
+  if (personal.tipo_vivienda === "Otro" && !personal.tipo_vivienda_otro?.trim())
+    errores.push("Especifique el tipo de vivienda")
 
   if (personal.sistema_pension === "AFP" && !personal.afp_nombre)
     errores.push("Seleccione la AFP")
