@@ -21,6 +21,8 @@ import {
   validarPaso4, validarPaso5, validarPaso6,
 } from "../utils/validators"
 import { mostrarErroresPaso } from "../components/ui/ToastErrores"
+import { generarConstancia } from "../utils/generarConstancia"
+import { generarFicha }      from "../utils/generarFicha"
 
 // ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
 function PasoPlaceholder({ numero, titulo }) {
@@ -296,16 +298,23 @@ export default function FormularioPage() {
           {/* Acciones */}
           <div className="flex flex-col gap-2 pt-1">
             <button
-              onClick={resetFicha}
-              className="btn-primary w-full justify-center"
+              onClick={() => generarFicha(ficha, personalId)}
+              className="btn-primary w-full justify-center gap-2"
             >
-              Registrar otro trabajador
+              📄 Descargar Ficha Completa
             </button>
             <button
-              onClick={() => window.print()}
-              className="btn-secondary w-full justify-center"
+              onClick={() => generarConstancia(ficha, personalId)}
+              className="btn-secondary w-full justify-center gap-2"
             >
-              Imprimir constancia
+              🖨️ Imprimir Constancia de Registro
+            </button>
+            <button
+              onClick={resetFicha}
+              className="w-full justify-center text-xs text-slate-400
+                         hover:text-slate-600 transition-colors py-1"
+            >
+              Registrar otro trabajador
             </button>
           </div>
 
