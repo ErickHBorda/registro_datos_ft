@@ -12,7 +12,12 @@ import {
   SISTEMA_PENSION, AFP, RAMA_MILITAR, NIVEL_IDIOMA,
 } from "../../utils/constants"
 
-export default function Step1Personal({ datos, onChange, tocados: tocadosGlobalesRaw = {}, onFotoCargada }) {
+export default function Step1Personal({
+  datos, onChange,
+  tocados: tocadosGlobalesRaw = {},
+  onFotoCargada,
+  fotoPreviewPersistida,
+}) {
   // Limpiar prefijo "personal." de las keys para que useValidacion las reconozca
   const tocadosGlobales = Object.fromEntries(
     Object.entries(tocadosGlobalesRaw)
@@ -20,12 +25,17 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
       .map(([k, v]) => [k.replace("personal.", ""), v])
   )
   const [fotoPreview, setFotoPreview] = useState(() => {
+    // 1. Prioridad: URL persistida desde FormularioPage (sobrevive navegación)
+    if (fotoPreviewPersistida) return fotoPreviewPersistida
+    // 2. Si hay File en memoria, reconstruir URL
     if (datos._foto_archivo instanceof File) {
-      onFotoCargada?.(true)
-      return URL.createObjectURL(datos._foto_archivo)
+      const url = URL.createObjectURL(datos._foto_archivo)
+      onFotoCargada?.(url)
+      return url
     }
+    // 3. Si ya tiene foto subida (edición futura)
     if (datos.foto_url) {
-      onFotoCargada?.(true)
+      onFotoCargada?.(datos.foto_url)
       return datos.foto_url
     }
     return null
@@ -136,9 +146,10 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
   const handleFoto = (e) => {
     const archivo = e.target.files[0]
     if (!archivo) return
-    setFotoPreview(URL.createObjectURL(archivo))
+    const url = URL.createObjectURL(archivo)
+    setFotoPreview(url)
     set("_foto_archivo", archivo)
-    onFotoCargada?.(true)
+    onFotoCargada?.(url)  // persiste la URL en FormularioPage
   }
 
   // ── Idiomas ────────────────────────────────────────────
@@ -206,9 +217,11 @@ export default function Step1Personal({ datos, onChange, tocados: tocadosGlobale
                 onChange={handleFoto}
                 className="absolute inset-0 opacity-0 cursor-pointer" />
             </div>
-            <p className="text-xs mt-1 text-center
-                          ${fotoPreview ? 'text-green-600' : 'text-red-400'}">
-              {fotoPreview ? "✓ Foto cargada" : "Obligatoria"}<br />
+            <p className="text-xs mt-1 text-center">
+              <span className={fotoPreview ? "text-green-600" : "text-red-400"}>
+                {fotoPreview ? "✓ Foto cargada" : "Requerida"}
+              </span>
+              <br />
               <span className="text-slate-400">JPG/PNG · Máx. 5MB</span>
             </p>
           </div>

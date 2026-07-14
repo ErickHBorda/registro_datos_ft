@@ -48,6 +48,9 @@ export default function FormularioPage() {
     getCamposObligatoriosPaso,
   } = useFicha()
 
+  // Ref que persiste la URL de preview entre navegaciones sin causar re-renders
+  const fotoPreviewRef = useRef(null)
+
   // Ref para subir al inicio al cambiar de paso
   const { mostrar: mostrarBienvenida, cerrar: cerrarBienvenida } =
     useModalBienvenida()
@@ -319,6 +322,8 @@ export default function FormularioPage() {
           datos={ficha.personal}
           onChange={actualizarCampo}
           tocados={tocados}
+          fotoPreviewPersistida={fotoPreviewRef.current}
+          onFotoCargada={(url) => { fotoPreviewRef.current = url }}
         />
       )
       case 2: return (
