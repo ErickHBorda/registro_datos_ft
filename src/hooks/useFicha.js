@@ -77,7 +77,14 @@ const ESTADO_INICIAL = {
     renacyt_activo:      true,
   },
   familiares:          [],
-  formacion_academica: [],
+  formacion_academica: [
+    { nivel: "Primaria",   estado: "", centro_estudios: "",
+      grado_obtenido: "", mencion: "", fecha_inicio: "",
+      fecha_conclusion: "", documento_acredita: "", orden: 1 },
+    { nivel: "Secundaria", estado: "", centro_estudios: "",
+      grado_obtenido: "", mencion: "", fecha_inicio: "",
+      fecha_conclusion: "", documento_acredita: "", orden: 1 },
+  ],
   otros_estudios:      [],
   experiencia_laboral: [],
   experiencia_docente: [],
@@ -96,13 +103,35 @@ const ESTADO_INICIAL = {
 }
 
 // ── Leer desde localStorage ────────────────────────────────
+const EBR_INICIAL = [
+  { nivel: "Primaria",   estado: "", centro_estudios: "",
+    grado_obtenido: "", mencion: "", fecha_inicio: "",
+    fecha_conclusion: "", documento_acredita: "", orden: 1 },
+  { nivel: "Secundaria", estado: "", centro_estudios: "",
+    grado_obtenido: "", mencion: "", fecha_inicio: "",
+    fecha_conclusion: "", documento_acredita: "", orden: 1 },
+]
+
 function cargarEstado() {
   try {
     const guardado = localStorage.getItem(STORAGE_KEY)
     if (!guardado) return null
     const parsed = JSON.parse(guardado)
-    // Verificar que la estructura es válida
     if (!parsed.ficha || !parsed.pasoActual) return null
+
+    // Garantizar que Primaria y Secundaria siempre existan
+    const fa = parsed.ficha.formacion_academica || []
+    const tienePrimaria   = fa.some((f) => f.nivel === "Primaria")
+    const tieneSecundaria = fa.some((f) => f.nivel === "Secundaria")
+    if (!tienePrimaria || !tieneSecundaria) {
+      parsed.ficha.formacion_academica = [
+        ...EBR_INICIAL.filter((e) =>
+          (e.nivel === "Primaria"   && !tienePrimaria) ||
+          (e.nivel === "Secundaria" && !tieneSecundaria)
+        ),
+        ...fa,
+      ]
+    }
     return parsed
   } catch {
     return null

@@ -57,17 +57,17 @@ const OTRO_ESTUDIO_VACIO = (tipo, orden) => ({
 })
 
 // ── Reglas de validación para formación ────────────────────
-const reglasFormacion = (esBasica) => ({
+const reglasFormacion = {
     estado: {
         requerido: true,
         mensajeRequerido: "Seleccione el estado",
     },
     centro_estudios: {
-        requerido: !esBasica,
+        requerido: true,
         minLength: 2,
         mensajeRequerido: "Centro de estudios es obligatorio",
     },
-})
+}
 
 // ── Reglas de validación para otros estudios ───────────────
 const reglasOtroEstudio = {
@@ -111,14 +111,16 @@ function ItemCard({ titulo, subtitulo, onEliminar, children }) {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onEliminar() }}
-                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50
-                       rounded-lg transition-colors"
-                    >
-                        <Trash2 size={13} />
-                    </button>
+                    {onEliminar && (
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onEliminar() }}
+                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50
+                           rounded-lg transition-colors"
+                        >
+                            <Trash2 size={13} />
+                        </button>
+                    )}
                     {expandido
                         ? <ChevronUp size={15} className="text-slate-400" />
                         : <ChevronDown size={15} className="text-slate-400" />
@@ -137,8 +139,15 @@ function ItemCard({ titulo, subtitulo, onEliminar, children }) {
 function FormFormacion({ item, onActualizar, esBasica }) {
     const set = (campo, valor) => onActualizar(campo, valor)
 
-    // ── Hook de validación en tiempo real ─────────────────
-    const { props: validarProps, validar } = useValidacion(reglasFormacion(esBasica))
+    // Inicializar tocados con los campos que ya tienen valor al montar
+    const tocadosIniciales = Object.fromEntries(
+        Object.keys(reglasFormacion).map((k) => [k, !!item[k]])
+    )
+
+    const { props: validarProps, validar } = useValidacion(
+        reglasFormacion,
+        tocadosIniciales
+    )
 
     // ── Handler genérico que actualiza y valida ───────────
     const handleChange = (campo, valor) => {
@@ -155,15 +164,13 @@ function FormFormacion({ item, onActualizar, esBasica }) {
                     {...validarProps("estado", item.estado)}
                     onChange={(e) => handleChange("estado", e.target.value)}
                 />
-                {!esBasica && (
-                    <Input
-                        label="Centro de Estudios" required
-                        value={item.centro_estudios}
-                        {...validarProps("centro_estudios", item.centro_estudios)}
-                        onChange={(e) => handleChange("centro_estudios", e.target.value)}
-                        placeholder="Ej: UNMSM"
-                    />
-                )}
+                <Input
+                    label="Centro de Estudios" required
+                    value={item.centro_estudios}
+                    {...validarProps("centro_estudios", item.centro_estudios)}
+                    onChange={(e) => handleChange("centro_estudios", e.target.value)}
+                    placeholder="Ej: I.E. San Francisco"
+                />
             </FieldGrid>
 
             {!esBasica && (
@@ -211,7 +218,14 @@ function FormOtroEstudio({ item, onActualizar }) {
     const set = (campo, valor) => onActualizar(campo, valor)
 
     // ── Hook de validación en tiempo real ─────────────────
-    const { props: validarProps, validar } = useValidacion(reglasOtroEstudio)
+    const tocadosIniciales = Object.fromEntries(
+        Object.keys(reglasOtroEstudio).map((k) => [k, !!item[k]])
+    )
+
+    const { props: validarProps, validar } = useValidacion(
+        reglasOtroEstudio,
+        tocadosIniciales
+    )
 
     // ── Handler genérico que actualiza y valida ───────────
     const handleChange = (campo, valor) => {
@@ -367,7 +381,7 @@ export default function Step4Formacion({
                                                 ({items.length}/{limite})
                                             </span>
                                         </span>
-                                        {items.length < limite && (
+                                        {items.length < limite && !esBasica && (
                                             <button
                                                 type="button"
                                                 onClick={() => agregarFormacion(nivel)}
@@ -380,7 +394,7 @@ export default function Step4Formacion({
 
                                     {/* Items del nivel */}
                                     <div className="space-y-2 ml-2">
-                                        {items.length === 0 && (
+                                        {items.length === 0 && !esBasica && (
                                             <p className="text-xs text-slate-400 italic py-1">
                                                 Sin registros — haga clic en "Agregar" para ingresar
                                             </p>
@@ -390,7 +404,7 @@ export default function Step4Formacion({
                                                 key={item._index}
                                                 titulo={item.centro_estudios || item.grado_obtenido || nivel}
                                                 subtitulo={item.estado || "Estado no definido"}
-                                                onEliminar={() => eliminarFormacion(item._index)}
+                                                onEliminar={esBasica ? null : () => eliminarFormacion(item._index)}
                                             >
                                                 <FormFormacion
                                                     item={item}

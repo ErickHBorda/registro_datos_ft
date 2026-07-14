@@ -266,8 +266,7 @@ export function validarPaso4(formacion, otrosEstudios) {
   formacion.forEach((f, i) => {
     if (!f.estado)
       errores.push(`Formación ${i + 1} (${f.nivel}): estado es obligatorio`)
-    const esBasica = ["Primaria", "Secundaria"].includes(f.nivel)
-    if (!esBasica && !f.centro_estudios?.trim())
+    if (!f.centro_estudios?.trim())
       errores.push(`Formación ${i + 1} (${f.nivel}): centro de estudios es obligatorio`)
   })
 
