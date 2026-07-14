@@ -1,62 +1,52 @@
 import { useState } from "react"
 import {
-    GraduationCap, BookOpen, Plus, Trash2,
-    ChevronDown, ChevronUp, Award
+    GraduationCap, BookOpen, Plus, Trash2, Pencil, Award
 } from "lucide-react"
 import { Input, Select, SectionTitle, FieldGrid } from "../ui/FormField"
+import ModalFormulario from "../ui/ModalFormulario"
 import {
-    NIVEL_EDUCATIVO, ESTADO_ESTUDIO,
-    TIPO_OTRO_ESTUDIO, TIPO_CONSTANCIA,
+    ESTADO_ESTUDIO, TIPO_CONSTANCIA,
 } from "../../utils/constants"
 import { useValidacion } from "../../hooks/useValidacion"
 
-// ── Niveles que van en formacion_academica ─────────────────
-const NIVELES_FORMACION = NIVEL_EDUCATIVO.filter((n) =>
-    ["Primaria", "Secundaria", "Técnico",
-        "Bachiller Universitario", "Título Universitario",
-        "Segunda Especialidad", "Maestría", "Doctorado"
-    ].includes(n.value)
-)
-
 // ── Límites por nivel ──────────────────────────────────────
 const LIMITES = {
-    "Primaria": 1,
-    "Secundaria": 1,
-    "Técnico": 1,
+    "Primaria":               1,
+    "Secundaria":             1,
+    "Técnico":                1,
     "Bachiller Universitario": 3,
-    "Título Universitario": 3,
-    "Segunda Especialidad": 3,
-    "Maestría": 3,
-    "Doctorado": 3,
+    "Título Universitario":   3,
+    "Segunda Especialidad":   3,
+    "Maestría":               3,
+    "Doctorado":              3,
 }
 
-// ── Registro vacío de formación ────────────────────────────
+// ── Registros vacíos ───────────────────────────────────────
 const FORMACION_VACIA = (nivel, orden) => ({
     nivel,
-    estado: "",
-    centro_estudios: "",
-    grado_obtenido: "",
-    mencion: "",
-    fecha_inicio: "",
-    fecha_conclusion: "",
+    estado:             "",
+    centro_estudios:    "",
+    grado_obtenido:     "",
+    mencion:            "",
+    fecha_inicio:       "",
+    fecha_conclusion:   "",
     documento_acredita: "",
     orden,
 })
 
-// ── Registro vacío de otros estudios ───────────────────────
 const OTRO_ESTUDIO_VACIO = (tipo, orden) => ({
     tipo,
-    nombre_curso: "",
+    nombre_curso:    "",
     centro_estudios: "",
-    fecha_inicio: "",
-    fecha_fin: "",
-    fecha_emision: "",
-    duracion_horas: "",
+    fecha_inicio:    "",
+    fecha_fin:       "",
+    fecha_emision:   "",
+    duracion_horas:  "",
     tipo_constancia: "",
     orden,
 })
 
-// ── Reglas de validación para formación ────────────────────
+// ── Reglas de validación ───────────────────────────────────
 const reglasFormacion = {
     estado: {
         requerido: true,
@@ -69,7 +59,6 @@ const reglasFormacion = {
     },
 }
 
-// ── Reglas de validación para otros estudios ───────────────
 const reglasOtroEstudio = {
     nombre_curso: {
         requerido: true,
@@ -83,22 +72,21 @@ const reglasOtroEstudio = {
     },
 }
 
-// ── Card colapsable genérica ───────────────────────────────
-function ItemCard({ titulo, subtitulo, onEliminar, children }) {
+// ══ EBR — Card colapsable inline (sin cambios) ═════════════
+function ItemCardEBR({ titulo, subtitulo, children }) {
     const [expandido, setExpandido] = useState(true)
-
     return (
         <div className="border border-slate-200 rounded-form overflow-hidden
-                    hover:border-slate-300 transition-colors">
+                        hover:border-slate-300 transition-colors">
             <div
                 className="flex items-center justify-between px-4 py-3
-                   bg-slate-50 cursor-pointer select-none
-                   hover:bg-slate-100 transition-colors"
+                           bg-slate-50 cursor-pointer select-none
+                           hover:bg-slate-100 transition-colors"
                 onClick={() => setExpandido(!expandido)}
             >
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center
-                          justify-center shrink-0">
+                                    justify-center shrink-0">
                         <GraduationCap size={13} className="text-primary-600" />
                     </div>
                     <div className="min-w-0">
@@ -110,46 +98,29 @@ function ItemCard({ titulo, subtitulo, onEliminar, children }) {
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    {onEliminar && (
-                        <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); onEliminar() }}
-                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50
-                           rounded-lg transition-colors"
-                        >
-                            <Trash2 size={13} />
-                        </button>
-                    )}
+                <div className="text-slate-400">
                     {expandido
-                        ? <ChevronUp size={15} className="text-slate-400" />
-                        : <ChevronDown size={15} className="text-slate-400" />
+                        ? <span className="text-xs">▲</span>
+                        : <span className="text-xs">▼</span>
                     }
                 </div>
             </div>
-
-            {expandido && (
-                <div className="p-4">{children}</div>
-            )}
+            {expandido && <div className="p-4">{children}</div>}
         </div>
     )
 }
 
-// ── Formulario de un registro de formación ─────────────────
-function FormFormacion({ item, onActualizar, esBasica }) {
+// ══ EBR — Formulario inline ════════════════════════════════
+function FormFormacionEBR({ item, onActualizar }) {
     const set = (campo, valor) => onActualizar(campo, valor)
 
-    // Inicializar tocados con los campos que ya tienen valor al montar
     const tocadosIniciales = Object.fromEntries(
         Object.keys(reglasFormacion).map((k) => [k, !!item[k]])
     )
-
     const { props: validarProps, validar } = useValidacion(
-        reglasFormacion,
-        tocadosIniciales
+        reglasFormacion, tocadosIniciales
     )
 
-    // ── Handler genérico que actualiza y valida ───────────
     const handleChange = (campo, valor) => {
         set(campo, valor)
         validar(campo, valor)
@@ -172,160 +143,213 @@ function FormFormacion({ item, onActualizar, esBasica }) {
                     placeholder="Ej: I.E. San Francisco"
                 />
             </FieldGrid>
-
-            {!esBasica && (
-                <>
-                    <FieldGrid cols={2}>
-                        <Input
-                            label="Grado Obtenido / Título"
-                            value={item.grado_obtenido}
-                            onChange={(e) => set("grado_obtenido", e.target.value)}
-                            placeholder="Ej: Bachiller en Ing. de Sistemas"
-                        />
-                        <Input
-                            label="Mención"
-                            value={item.mencion}
-                            onChange={(e) => set("mencion", e.target.value)}
-                            placeholder="Ej: Cum Laude"
-                        />
-                    </FieldGrid>
-                    <FieldGrid cols={2}>
-                        <Input
-                            label="Fecha de Inicio" type="date"
-                            value={item.fecha_inicio}
-                            onChange={(e) => set("fecha_inicio", e.target.value)}
-                        />
-                        <Input
-                            label="Fecha de Conclusión" type="date"
-                            value={item.fecha_conclusion}
-                            onChange={(e) => set("fecha_conclusion", e.target.value)}
-                        />
-                    </FieldGrid>
-                    <Input
-                        label="Documento que Acredita"
-                        value={item.documento_acredita}
-                        onChange={(e) => set("documento_acredita", e.target.value)}
-                        placeholder="Ej: Diploma de Bachiller, Resolución N°..."
-                    />
-                </>
-            )}
         </div>
     )
 }
 
-// ── Formulario de un otro estudio ──────────────────────────
-function FormOtroEstudio({ item, onActualizar }) {
-    const set = (campo, valor) => onActualizar(campo, valor)
-
-    // ── Hook de validación en tiempo real ─────────────────
+// ══ Superior/Posgrado — Formulario dentro del modal ════════
+function FormFormacionModal({ item, onChange }) {
     const tocadosIniciales = Object.fromEntries(
-        Object.keys(reglasOtroEstudio).map((k) => [k, !!item[k]])
+        Object.keys(reglasFormacion).map((k) => [k, !!item[k]])
     )
+    const { props: vProps } = useValidacion(reglasFormacion, tocadosIniciales)
 
-    const { props: validarProps, validar } = useValidacion(
-        reglasOtroEstudio,
-        tocadosIniciales
-    )
-
-    // ── Handler genérico que actualiza y valida ───────────
-    const handleChange = (campo, valor) => {
-        set(campo, valor)
-        validar(campo, valor)
-    }
+    const campo = (nombre) => ({
+        value: item[nombre] ?? "",
+        ...vProps(nombre, item[nombre]),
+        onChange: (e) => {
+            vProps(nombre, item[nombre]).onChange(e)
+            onChange(nombre, e.target.value)
+        },
+    })
 
     return (
         <div className="space-y-4">
             <FieldGrid cols={2}>
-                <div className="sm:col-span-2">
-                    <Input
-                        label="Nombre del Curso / Programa" required
-                        value={item.nombre_curso}
-                        {...validarProps("nombre_curso", item.nombre_curso)}
-                        onChange={(e) => handleChange("nombre_curso", e.target.value)}
-                        placeholder="Ej: Diplomado en Gestión Pública"
-                    />
-                </div>
+                <Select
+                    label="Estado" required opciones={ESTADO_ESTUDIO}
+                    {...campo("estado")}
+                />
                 <Input
                     label="Centro de Estudios" required
-                    value={item.centro_estudios}
-                    {...validarProps("centro_estudios", item.centro_estudios)}
-                    onChange={(e) => handleChange("centro_estudios", e.target.value)}
-                    placeholder="Ej: SERVIR, PUCP"
-                />
-                <Input
-                    label="Duración (horas)" type="number" min={1}
-                    value={item.duracion_horas}
-                    onChange={(e) => set("duracion_horas", e.target.value)}
-                    placeholder="Ej: 120"
+                    placeholder="Ej: UNMSM"
+                    {...campo("centro_estudios")}
                 />
             </FieldGrid>
-            <FieldGrid cols={3}>
+            <FieldGrid cols={2}>
+                <Input
+                    label="Grado Obtenido / Título"
+                    placeholder="Ej: Bachiller en Ing. de Sistemas"
+                    value={item.grado_obtenido ?? ""}
+                    onChange={(e) => onChange("grado_obtenido", e.target.value)}
+                    tocado={!!item.grado_obtenido} valido={!!item.grado_obtenido}
+                />
+                <Input
+                    label="Mención"
+                    placeholder="Ej: Cum Laude"
+                    value={item.mencion ?? ""}
+                    onChange={(e) => onChange("mencion", e.target.value)}
+                    tocado={!!item.mencion} valido={!!item.mencion}
+                />
+            </FieldGrid>
+            <FieldGrid cols={2}>
                 <Input
                     label="Fecha de Inicio" type="date"
-                    value={item.fecha_inicio}
-                    onChange={(e) => set("fecha_inicio", e.target.value)}
+                    value={item.fecha_inicio ?? ""}
+                    onChange={(e) => onChange("fecha_inicio", e.target.value)}
+                    tocado={!!item.fecha_inicio} valido={!!item.fecha_inicio}
                 />
                 <Input
-                    label="Fecha de Fin" type="date"
-                    value={item.fecha_fin}
-                    onChange={(e) => set("fecha_fin", e.target.value)}
-                />
-                <Input
-                    label="Fecha de Emisión" type="date"
-                    value={item.fecha_emision}
-                    onChange={(e) => set("fecha_emision", e.target.value)}
+                    label="Fecha de Conclusión" type="date"
+                    value={item.fecha_conclusion ?? ""}
+                    onChange={(e) => onChange("fecha_conclusion", e.target.value)}
+                    tocado={!!item.fecha_conclusion} valido={!!item.fecha_conclusion}
                 />
             </FieldGrid>
-            <Select
-                label="Tipo de Constancia" opciones={TIPO_CONSTANCIA}
-                value={item.tipo_constancia}
-                onChange={(e) => set("tipo_constancia", e.target.value)}
+            <Input
+                label="Documento que Acredita"
+                placeholder="Ej: Diploma de Bachiller, Resolución N°..."
+                value={item.documento_acredita ?? ""}
+                onChange={(e) => onChange("documento_acredita", e.target.value)}
+                tocado={!!item.documento_acredita} valido={!!item.documento_acredita}
             />
         </div>
     )
 }
 
-// ── Componente principal ───────────────────────────────────
+// ══ Otros Estudios — Formulario dentro del modal ═══════════
+function FormOtroEstudioModal({ item, onChange }) {
+    const tocadosIniciales = Object.fromEntries(
+        Object.keys(reglasOtroEstudio).map((k) => [k, !!item[k]])
+    )
+    const { props: vProps } = useValidacion(reglasOtroEstudio, tocadosIniciales)
+
+    const campo = (nombre) => ({
+        value: item[nombre] ?? "",
+        ...vProps(nombre, item[nombre]),
+        onChange: (e) => {
+            vProps(nombre, item[nombre]).onChange(e)
+            onChange(nombre, e.target.value)
+        },
+    })
+
+    return (
+        <div className="space-y-4">
+            <Input
+                label="Nombre del Curso / Programa" required
+                placeholder="Ej: Diplomado en Gestión Pública"
+                {...campo("nombre_curso")}
+            />
+            <FieldGrid cols={2}>
+                <Input
+                    label="Centro de Estudios" required
+                    placeholder="Ej: SERVIR, PUCP"
+                    {...campo("centro_estudios")}
+                />
+                <Input
+                    label="Duración (horas)" type="number" min={1}
+                    placeholder="Ej: 120"
+                    value={item.duracion_horas ?? ""}
+                    onChange={(e) => onChange("duracion_horas", e.target.value)}
+                    tocado={!!item.duracion_horas} valido={!!item.duracion_horas}
+                />
+            </FieldGrid>
+            <FieldGrid cols={3}>
+                <Input
+                    label="Fecha de Inicio" type="date"
+                    value={item.fecha_inicio ?? ""}
+                    onChange={(e) => onChange("fecha_inicio", e.target.value)}
+                    tocado={!!item.fecha_inicio} valido={!!item.fecha_inicio}
+                />
+                <Input
+                    label="Fecha de Fin" type="date"
+                    value={item.fecha_fin ?? ""}
+                    onChange={(e) => onChange("fecha_fin", e.target.value)}
+                    tocado={!!item.fecha_fin} valido={!!item.fecha_fin}
+                />
+                <Input
+                    label="Fecha de Emisión" type="date"
+                    value={item.fecha_emision ?? ""}
+                    onChange={(e) => onChange("fecha_emision", e.target.value)}
+                    tocado={!!item.fecha_emision} valido={!!item.fecha_emision}
+                />
+            </FieldGrid>
+            <Select
+                label="Tipo de Constancia" opciones={TIPO_CONSTANCIA}
+                value={item.tipo_constancia ?? ""}
+                onChange={(e) => onChange("tipo_constancia", e.target.value)}
+                tocado={!!item.tipo_constancia} valido={!!item.tipo_constancia}
+            />
+        </div>
+    )
+}
+
+// ══ Card compacta para lista de Superior/Posgrado/Otros ════
+function FormacionRow({ item, nivel, onEditar, onEliminar }) {
+    return (
+        <div className="flex items-center justify-between px-4 py-3
+                        border border-slate-200 rounded-xl hover:border-slate-300
+                        hover:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center
+                                justify-center shrink-0">
+                    <GraduationCap size={14} className="text-primary-600" />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">
+                        {item.centro_estudios || item.nombre_curso || nivel}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        {item.grado_obtenido && (
+                            <span className="text-xs text-slate-500 truncate">
+                                {item.grado_obtenido}
+                            </span>
+                        )}
+                        {item.estado && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0
+                                ${item.estado === "Completo"
+                                    ? "bg-green-100 text-green-700"
+                                    : item.estado === "En curso"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}>
+                                {item.estado}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+                <button type="button" onClick={onEditar}
+                    className="p-1.5 text-primary-400 hover:text-primary-600
+                               hover:bg-primary-50 rounded-lg transition-colors"
+                    title="Editar">
+                    <Pencil size={14} />
+                </button>
+                <button type="button" onClick={onEliminar}
+                    className="p-1.5 text-red-400 hover:text-red-600
+                               hover:bg-red-50 rounded-lg transition-colors"
+                    title="Eliminar">
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        </div>
+    )
+}
+
+// ══ Componente principal ═══════════════════════════════════
 export default function Step4Formacion({
     formacion, otrosEstudios,
     onChangeFormacion, onChangeOtros,
 }) {
-
-    // ── Formación académica ────────────────────────────────
-    const agregarFormacion = (nivel) => {
-        const existentes = formacion.filter((f) => f.nivel === nivel)
-        if (existentes.length >= LIMITES[nivel]) return
-        const orden = existentes.length + 1
-        onChangeFormacion([...formacion, FORMACION_VACIA(nivel, orden)])
-    }
-
-    const actualizarFormacion = (index, campo, valor) => {
-        const lista = [...formacion]
-        lista[index] = { ...lista[index], [campo]: valor }
-        onChangeFormacion(lista)
-    }
-
-    const eliminarFormacion = (index) => {
-        onChangeFormacion(formacion.filter((_, i) => i !== index))
-    }
-
-    // ── Otros estudios ─────────────────────────────────────
-    const agregarOtro = (tipo) => {
-        const existentes = otrosEstudios.filter((e) => e.tipo === tipo)
-        if (existentes.length >= 10) return
-        const orden = existentes.length + 1
-        onChangeOtros([...otrosEstudios, OTRO_ESTUDIO_VACIO(tipo, orden)])
-    }
-
-    const actualizarOtro = (index, campo, valor) => {
-        const lista = [...otrosEstudios]
-        lista[index] = { ...lista[index], [campo]: valor }
-        onChangeOtros(lista)
-    }
-
-    const eliminarOtro = (index) => {
-        onChangeOtros(otrosEstudios.filter((_, i) => i !== index))
-    }
+    // ── Estado del modal ───────────────────────────────────
+    const [modal, setModal] = useState({
+        visible: false,
+        tipo:    null,   // "formacion" | "otro"
+        nivel:   null,   // nivel o tipo de otro estudio
+        index:   null,
+        item:    null,
+    })
 
     // ── Helpers de agrupación ──────────────────────────────
     const porNivel = (nivel) => formacion
@@ -336,88 +360,219 @@ export default function Step4Formacion({
         .map((e, i) => ({ ...e, _index: i }))
         .filter((e) => e.tipo === tipo)
 
-    // ── Grupos de niveles ──────────────────────────────────
-    const grupos = [
-        {
-            titulo: "Educación Básica Regular",
-            icono: BookOpen,
-            niveles: ["Primaria", "Secundaria"],
-        },
+    // ── Actualizar campo dentro del modal ──────────────────
+    const handleCampoModal = (campo, valor) => {
+        setModal((prev) => ({
+            ...prev,
+            item: { ...prev.item, [campo]: valor },
+        }))
+    }
+
+    // ── Abrir modal formación superior/posgrado ────────────
+    const abrirAgregarFormacion = (nivel) => {
+        const existentes = formacion.filter((f) => f.nivel === nivel)
+        if (existentes.length >= LIMITES[nivel]) return
+        setModal({
+            visible: true,
+            tipo:    "formacion",
+            nivel,
+            index:   null,
+            item:    FORMACION_VACIA(nivel, existentes.length + 1),
+        })
+    }
+
+    const abrirEditarFormacion = (index, nivel) => {
+        setModal({
+            visible: true,
+            tipo:    "formacion",
+            nivel,
+            index,
+            item:    { ...formacion[index] },
+        })
+    }
+
+    // ── Abrir modal otros estudios ─────────────────────────
+    const abrirAgregarOtro = (tipo) => {
+        const existentes = otrosEstudios.filter((e) => e.tipo === tipo)
+        if (existentes.length >= 10) return
+        setModal({
+            visible: true,
+            tipo:    "otro",
+            nivel:   tipo,
+            index:   null,
+            item:    OTRO_ESTUDIO_VACIO(tipo, existentes.length + 1),
+        })
+    }
+
+    const abrirEditarOtro = (index, tipo) => {
+        setModal({
+            visible: true,
+            tipo:    "otro",
+            nivel:   tipo,
+            index,
+            item:    { ...otrosEstudios[index] },
+        })
+    }
+
+    // ── Guardar desde el modal ─────────────────────────────
+    const handleGuardar = () => {
+        const { tipo, index, item } = modal
+
+        if (tipo === "formacion") {
+            if (!item.estado || !item.centro_estudios?.trim()) return
+            if (index !== null) {
+                const lista = [...formacion]
+                lista[index] = item
+                onChangeFormacion(lista)
+            } else {
+                onChangeFormacion([...formacion, item])
+            }
+        } else {
+            if (!item.nombre_curso?.trim() || !item.centro_estudios?.trim()) return
+            if (index !== null) {
+                const lista = [...otrosEstudios]
+                lista[index] = item
+                onChangeOtros(lista)
+            } else {
+                onChangeOtros([...otrosEstudios, item])
+            }
+        }
+        setModal({ visible: false, tipo: null, nivel: null, index: null, item: null })
+    }
+
+    const handleCancelar = () => {
+        setModal({ visible: false, tipo: null, nivel: null, index: null, item: null })
+    }
+
+    // ── Eliminar ───────────────────────────────────────────
+    const eliminarFormacion = (index) => {
+        onChangeFormacion(formacion.filter((_, i) => i !== index))
+    }
+
+    const eliminarOtro = (index) => {
+        onChangeOtros(otrosEstudios.filter((_, i) => i !== index))
+    }
+
+    // ── Actualizar EBR inline ──────────────────────────────
+    const actualizarFormacion = (index, campo, valor) => {
+        const lista = [...formacion]
+        lista[index] = { ...lista[index], [campo]: valor }
+        onChangeFormacion(lista)
+    }
+
+    // ── Grupos ─────────────────────────────────────────────
+    const gruposSuperiores = [
         {
             titulo: "Educación Superior",
-            icono: GraduationCap,
+            icono:  GraduationCap,
             niveles: ["Técnico", "Bachiller Universitario",
                 "Título Universitario", "Segunda Especialidad"],
         },
         {
             titulo: "Posgrado",
-            icono: Award,
+            icono:  Award,
             niveles: ["Maestría", "Doctorado"],
         },
     ]
 
+    // ── Título del modal ───────────────────────────────────
+    const tituloModal = modal.index !== null
+        ? `Editar — ${modal.nivel}`
+        : `Agregar — ${modal.nivel}`
+
     return (
         <div className="space-y-5">
 
-            {/* ══ FORMACIÓN ACADÉMICA ══════════════════════════ */}
-            {grupos.map((grupo) => (
+            {/* ══ 1. EDUCACIÓN BÁSICA REGULAR (inline) ══════ */}
+            <div className="form-card">
+                <SectionTitle icono={BookOpen} titulo="Educación Básica Regular" />
+                <div className="space-y-4">
+                    {["Primaria", "Secundaria"].map((nivel) => {
+                        const items = porNivel(nivel)
+                        return (
+                            <div key={nivel}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-semibold text-slate-600
+                                                     uppercase tracking-wide">
+                                        {nivel}
+                                        <span className="text-slate-400 font-normal ml-1">
+                                            ({items.length}/1)
+                                        </span>
+                                    </span>
+                                </div>
+                                <div className="space-y-2 ml-2">
+                                    {items.map((item) => (
+                                        <ItemCardEBR
+                                            key={item._index}
+                                            titulo={item.centro_estudios || nivel}
+                                            subtitulo={item.estado || "Estado no definido"}
+                                        >
+                                            <FormFormacionEBR
+                                                item={item}
+                                                onActualizar={(campo, valor) =>
+                                                    actualizarFormacion(item._index, campo, valor)
+                                                }
+                                            />
+                                        </ItemCardEBR>
+                                    ))}
+                                </div>
+                                {nivel !== "Secundaria" && (
+                                    <div className="border-b border-slate-100 mt-3" />
+                                )}
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+
+            {/* ══ 2. EDUCACIÓN SUPERIOR Y POSGRADO (modal) ══ */}
+            {gruposSuperiores.map((grupo) => (
                 <div key={grupo.titulo} className="form-card">
                     <SectionTitle icono={grupo.icono} titulo={grupo.titulo} />
-
                     <div className="space-y-4">
                         {grupo.niveles.map((nivel) => {
                             const items = porNivel(nivel)
                             const limite = LIMITES[nivel]
-                            const esBasica = ["Primaria", "Secundaria"].includes(nivel)
-
                             return (
                                 <div key={nivel}>
-                                    {/* Encabezado del nivel */}
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-xs font-semibold text-slate-600
-                                     uppercase tracking-wide">
+                                                         uppercase tracking-wide">
                                             {nivel}
                                             <span className="text-slate-400 font-normal ml-1">
                                                 ({items.length}/{limite})
                                             </span>
                                         </span>
-                                        {items.length < limite && !esBasica && (
+                                        {items.length < limite && (
                                             <button
                                                 type="button"
-                                                onClick={() => agregarFormacion(nivel)}
+                                                onClick={() => abrirAgregarFormacion(nivel)}
                                                 className="btn-secondary text-xs px-2.5 py-1 gap-1"
                                             >
                                                 <Plus size={11} /> Agregar
                                             </button>
                                         )}
                                     </div>
-
-                                    {/* Items del nivel */}
                                     <div className="space-y-2 ml-2">
-                                        {items.length === 0 && !esBasica && (
+                                        {items.length === 0 && (
                                             <p className="text-xs text-slate-400 italic py-1">
-                                                Sin registros — haga clic en "Agregar" para ingresar
+                                                Sin registros — haga clic en "Agregar"
                                             </p>
                                         )}
                                         {items.map((item) => (
-                                            <ItemCard
+                                            <FormacionRow
                                                 key={item._index}
-                                                titulo={item.centro_estudios || item.grado_obtenido || nivel}
-                                                subtitulo={item.estado || "Estado no definido"}
-                                                onEliminar={esBasica ? null : () => eliminarFormacion(item._index)}
-                                            >
-                                                <FormFormacion
-                                                    item={item}
-                                                    esBasica={esBasica}
-                                                    onActualizar={(campo, valor) =>
-                                                        actualizarFormacion(item._index, campo, valor)
-                                                    }
-                                                />
-                                            </ItemCard>
+                                                item={item}
+                                                nivel={nivel}
+                                                onEditar={() =>
+                                                    abrirEditarFormacion(item._index, nivel)
+                                                }
+                                                onEliminar={() =>
+                                                    eliminarFormacion(item._index)
+                                                }
+                                            />
                                         ))}
                                     </div>
-
-                                    {/* Separador entre niveles */}
                                     {nivel !== grupo.niveles[grupo.niveles.length - 1] && (
                                         <div className="border-b border-slate-100 mt-3" />
                                     )}
@@ -428,51 +583,82 @@ export default function Step4Formacion({
                 </div>
             ))}
 
-            {/* ══ OTROS ESTUDIOS ══════════════════════════════ */}
-            {["Diplomado", "Especialización", "Otro"].map((tipo) => (
-                <div key={tipo} className="form-card">
-                    <div className="flex items-center justify-between mb-4">
-                        <SectionTitle
-                            icono={BookOpen}
-                            titulo={tipo === "Otro" ? "Otros Estudios" : `${tipo}s`}
-                            subtitulo={`Máximo 10 registros · ${porTipo(tipo).length}/10 ingresados`}
-                        />
-                        {porTipo(tipo).length < 10 && (
-                            <button
-                                type="button"
-                                onClick={() => agregarOtro(tipo)}
-                                className="btn-secondary text-xs px-3 py-1.5 gap-1 shrink-0"
-                            >
-                                <Plus size={12} /> Agregar
-                            </button>
-                        )}
-                    </div>
-
-                    {porTipo(tipo).length === 0 ? (
-                        <p className="text-xs text-slate-400 italic text-center py-4">
-                            No hay {tipo === "Otro" ? "otros estudios" : `${tipo.toLowerCase()}s`} registrados
-                        </p>
-                    ) : (
-                        <div className="space-y-2">
-                            {porTipo(tipo).map((item) => (
-                                <ItemCard
-                                    key={item._index}
-                                    titulo={item.nombre_curso || `${tipo} ${item.orden}`}
-                                    subtitulo={item.centro_estudios || "Centro no definido"}
-                                    onEliminar={() => eliminarOtro(item._index)}
+            {/* ══ 3. OTROS ESTUDIOS (modal) ══════════════════ */}
+            {["Diplomado", "Especialización", "Otro"].map((tipo) => {
+                const items = porTipo(tipo)
+                return (
+                    <div key={tipo} className="form-card">
+                        <div className="flex items-center justify-between mb-4">
+                            <SectionTitle
+                                icono={BookOpen}
+                                titulo={tipo === "Otro" ? "Otros Estudios" : `${tipo}s`}
+                                subtitulo={`Máximo 10 · ${items.length}/10 registrados`}
+                            />
+                            {items.length < 10 && (
+                                <button
+                                    type="button"
+                                    onClick={() => abrirAgregarOtro(tipo)}
+                                    className="btn-secondary text-xs px-3 py-1.5 gap-1 shrink-0"
                                 >
-                                    <FormOtroEstudio
+                                    <Plus size={12} /> Agregar
+                                </button>
+                            )}
+                        </div>
+
+                        {items.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic text-center py-4">
+                                No hay {tipo === "Otro"
+                                    ? "otros estudios"
+                                    : `${tipo.toLowerCase()}s`} registrados
+                            </p>
+                        ) : (
+                            <div className="space-y-2">
+                                {items.map((item) => (
+                                    <FormacionRow
+                                        key={item._index}
                                         item={item}
-                                        onActualizar={(campo, valor) =>
-                                            actualizarOtro(item._index, campo, valor)
+                                        nivel={tipo}
+                                        onEditar={() =>
+                                            abrirEditarOtro(item._index, tipo)
+                                        }
+                                        onEliminar={() =>
+                                            eliminarOtro(item._index)
                                         }
                                     />
-                                </ItemCard>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )
+            })}
+
+            {/* ══ Modal único compartido ═════════════════════ */}
+            {modal.item && (
+                <ModalFormulario
+                    visible={modal.visible}
+                    titulo={tituloModal}
+                    subtitulo={
+                        modal.tipo === "formacion"
+                            ? "Complete los datos de formación académica"
+                            : "Complete los datos del estudio"
+                    }
+                    esEdicion={modal.index !== null}
+                    onGuardar={handleGuardar}
+                    onCancelar={handleCancelar}
+                >
+                    {modal.tipo === "formacion" ? (
+                        <FormFormacionModal
+                            item={modal.item}
+                            onChange={handleCampoModal}
+                        />
+                    ) : (
+                        <FormOtroEstudioModal
+                            item={modal.item}
+                            onChange={handleCampoModal}
+                        />
                     )}
-                </div>
-            ))}
+                </ModalFormulario>
+            )}
 
         </div>
     )
