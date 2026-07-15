@@ -17,6 +17,7 @@ export default function Step1Personal({
   tocados: tocadosGlobalesRaw = {},
   onFotoCargada,
   fotoPreviewPersistida,
+  dniVerificado = "",
 }) {
   // Limpiar prefijo "personal." de las keys para que useValidacion las reconozca
   const tocadosGlobales = Object.fromEntries(
@@ -222,7 +223,9 @@ export default function Step1Personal({
                 {fotoPreview ? "✓ Foto cargada" : "Requerida"}
               </span>
               <br />
-              <span className="text-slate-400">JPG/PNG · Máx. 5MB</span>
+              <span className="text-slate-400">JPG/PNG/WebP · Máx. 5MB</span>
+              <br />
+              <span className="text-slate-300 text-[10px]">No se acepta AVIF/HEIC</span>
             </p>
           </div>
 
@@ -240,16 +243,18 @@ export default function Step1Personal({
 
         <FieldGrid cols={3}>
           <Input label="DNI" required maxLength={8}
-            placeholder="12345678"
-            {...campo("dni")}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, "")
-              vProps("dni", datos.dni).onChange({
-                ...e, target: { ...e.target, value: val }
-              })
-              set("dni", val)
-            }}
-          />
+              placeholder="12345678"
+              readOnly={!!dniVerificado}
+              className={dniVerificado ? "bg-slate-50 cursor-not-allowed" : ""}
+              {...campo("dni")}
+              onChange={dniVerificado ? undefined : (e) => {
+                const val = e.target.value.replace(/\D/g, "")
+                vProps("dni", datos.dni).onChange({
+                  ...e, target: { ...e.target, value: val }
+                })
+                set("dni", val)
+              }}
+            />
           <Input label="Libreta Militar"
             value={datos.libreta_militar ?? ""}
             onChange={(e) => set("libreta_militar", e.target.value)}

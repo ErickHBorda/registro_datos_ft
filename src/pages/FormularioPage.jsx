@@ -1,11 +1,11 @@
-import { useRef, useState, useMemo } from "react"
+import { useRef, useState, useMemo, useCallback } from "react"
 import { Toaster, toast } from "react-hot-toast"
 import { useFicha } from "../hooks/useFicha"
 import { personalService, fotosService } from "../services/api"
+import { adminService, solicitudService } from "../services/adminApi"
 import { useModalBienvenida } from "../hooks/useModal"
 import ModalBienvenida from "../components/ui/ModalBienvenida"
 import { PASOS_FICHA } from "../utils/constants"
-import Stepper from "../components/ui/Stepper"
 import BarraProgreso from "../components/ui/BarraProgreso"
 import NavButtons from "../components/ui/NavButtons"
 import Step1Personal from "../components/steps/Step1Personal"
@@ -16,6 +16,7 @@ import Step5Experiencia from "../components/steps/Step5Experiencia"
 import Step6Otros from "../components/steps/Step6Otros"
 import Step7Revision from "../components/steps/Step7Revision"
 import ModalConfirmacion from "../components/ui/ModalConfirmacion"
+import PantallaInicioDNI from "./PantallaInicioDNI"
 import {
   validarPaso1, validarPaso2, validarPaso3,
   validarPaso4, validarPaso5, validarPaso6,
@@ -23,23 +24,42 @@ import {
 import { mostrarErroresPaso } from "../components/ui/ToastErrores"
 import { generarConstancia } from "../utils/generarConstancia"
 import { generarFicha }      from "../utils/generarFicha"
+import PantallaEstado from "../components/ui/PantallaEstado"
 
-// ── Placeholders de pasos (los iremos reemplazando paso a paso) ──
-function PasoPlaceholder({ numero, titulo }) {
-  return (
-    <div className="form-card min-h-[300px] flex flex-col items-center
-                    justify-center text-center space-y-3">
-      <div className="w-14 h-14 rounded-full bg-primary-50 border-2
-                      border-primary-200 flex items-center justify-center">
-        <span className="text-2xl font-bold text-primary-400">{numero}</span>
-      </div>
-      <h3 className="text-base font-semibold text-slate-700">{titulo}</h3>
-      <p className="text-xs text-slate-400">Este paso se construirá a continuación</p>
-    </div>
-  )
-}
+// ── Fases del flujo ───────────────────────────────────────
+// "dni"       → pantalla inicial de verificación de DNI
+// "formulario" → formulario multi-paso (nuevo registro)
+// "edicion"   → formulario con datos precargados (actualización aprobada)
 
 export default function FormularioPage() {
+  const [fase, setFaseState] = useState(
+    () => sessionStorage.getItem("unamba_fase") || "dni"
+  )
+  const [personalIdEdicion, setPersonalIdEdicion] = useState(
+    () => {
+      const id = sessionStorage.getItem("unamba_edicion_id")
+      return id ? parseInt(id) : null
+    }
+  )
+  const [dniVerificado, setDniVerificadoState] = useState(
+    () => sessionStorage.getItem("unamba_dni_verificado") || ""
+  )
+
+  // Wrappers que persisten en sessionStorage
+  const setFase = (valor) => {
+    sessionStorage.setItem("unamba_fase", valor)
+    setFaseState(valor)
+  }
+  const setDniVerificado = (valor) => {
+    sessionStorage.setItem("unamba_dni_verificado", valor)
+    setDniVerificadoState(valor)
+  }
+  const setPersonalIdEdicionPersistido = (valor) => {
+    if (valor) sessionStorage.setItem("unamba_edicion_id", valor)
+    else sessionStorage.removeItem("unamba_edicion_id")
+    setPersonalIdEdicion(valor)
+  }
+
   const {
     ficha, pasoActual, cargando, completado,
     setCargando, setPersonalId, setCompletado,
@@ -50,166 +70,199 @@ export default function FormularioPage() {
     getCamposObligatoriosPaso,
   } = useFicha()
 
-  // Ref que persiste la URL de preview entre navegaciones sin causar re-renders
   const fotoPreviewRef = useRef(null)
-
-  // Ref para subir al inicio al cambiar de paso
+  const topRef         = useRef(null)
   const { mostrar: mostrarBienvenida, cerrar: cerrarBienvenida } =
     useModalBienvenida()
 
-  // Progreso = pasos completados / total de pasos
-  // En paso 1 = 0%, paso 2 = 14%, ..., paso 7 = 86%
   const progresoPaso = useMemo(() => {
     const totalPasos = 7
     const pasosCompletados = getCamposObligatoriosPaso(pasoActual).length
-
     return Math.round(((pasosCompletados + 1) / totalPasos) * 100)
   }, [getCamposObligatoriosPaso, pasoActual])
 
-  const topRef = useRef(null)
   const estadoGuardado = !!localStorage.getItem("unamba_ficha_2025")
-
   const scrollTop = () =>
     topRef.current?.scrollIntoView({ behavior: "smooth" })
 
   const [modalVisible, setModalVisible] = useState(false)
+  const [pantalla, setPantalla] = useState({ visible: false, tipo: "cargando", titulo: "", subtitulo: "" })
 
-  // ── Navegación con validación por paso ────────────────────
+  // ── Handlers de PantallaInicioDNI ────────────────────────
+
+  // Nuevo registro — simplemente pasar al formulario
+  const handleNuevoRegistro = useCallback((dni) => {
+    // Pre-llenar el DNI verificado en el estado global
+    actualizarCampo("personal", "dni", dni)
+    setDniVerificado(dni)
+    setFase("formulario")
+  }, [actualizarCampo])
+
+  // Edición aprobada — cargar datos existentes y pasar al formulario
+  const handleEditarRegistro = useCallback(async (pId, dniTrabajador) => {
+    try {
+      const data = await personalService.obtenerPorDni(dniTrabajador)
+
+      // Precargar todos los datos en el estado global del formulario
+      actualizarSeccion("personal",            data.personal            || {})
+      actualizarSeccion("datos_laborales",     data.datos_laborales     || {})
+      actualizarSeccion("familiares",          data.familiares          || [])
+      actualizarSeccion("formacion_academica", data.formacion_academica || [])
+      actualizarSeccion("otros_estudios",      data.otros_estudios      || [])
+      actualizarSeccion("experiencia_laboral", data.experiencia_laboral || [])
+      actualizarSeccion("experiencia_docente", data.experiencia_docente || [])
+      actualizarSeccion("otras_instituciones", data.otras_instituciones || {})
+      actualizarSeccion("reconocimientos",     data.reconocimientos     || [])
+
+      // Si tiene foto_url, persistirla en el ref para que Step1 la muestre
+      if (data.personal?.foto_url) {
+        fotoPreviewRef.current = data.personal.foto_url
+      }
+      setPersonalIdEdicionPersistido(pId)
+      setFase("edicion")
+    } catch {
+      toast.error("Error al cargar los datos. Intente nuevamente.")
+    }
+  }, [actualizarSeccion])
+
+  // ── Navegación con validación por paso ───────────────────
   const handleSiguiente = () => {
     let errores = []
-
     switch (pasoActual) {
       case 1:
         errores = validarPaso1(ficha.personal)
         if (errores.length > 0) {
           mostrarErroresPaso(errores, "Datos Personales")
-          scrollTop()
-          return
+          scrollTop(); return
         }
         break
-
       case 2:
         errores = validarPaso2(ficha.datos_laborales)
         if (errores.length > 0) {
           mostrarErroresPaso(errores, "Datos Laborales")
-          scrollTop()
-          return
+          scrollTop(); return
         }
         break
-
       case 3:
         errores = validarPaso3(ficha.familiares)
         if (errores.length > 0) {
           mostrarErroresPaso(errores, "Familiares")
-          scrollTop()
-          return
+          scrollTop(); return
         }
         break
-
       case 4:
-        errores = validarPaso4(
-          ficha.formacion_academica,
-          ficha.otros_estudios,
-        )
+        errores = validarPaso4(ficha.formacion_academica, ficha.otros_estudios)
         if (errores.length > 0) {
           mostrarErroresPaso(errores, "Formación Académica")
-          scrollTop()
-          return
+          scrollTop(); return
         }
         break
-
       case 5:
-        errores = validarPaso5(
-          ficha.experiencia_laboral,
-          ficha.experiencia_docente,
-        )
+        errores = validarPaso5(ficha.experiencia_laboral, ficha.experiencia_docente)
         if (errores.length > 0) {
           mostrarErroresPaso(errores, "Experiencia Laboral")
-          scrollTop()
-          return
+          scrollTop(); return
         }
         break
-
       case 6:
-        errores = validarPaso6(
-          ficha.otras_instituciones,
-          ficha.reconocimientos,
-        )
+        errores = validarPaso6(ficha.otras_instituciones, ficha.reconocimientos)
         if (errores.length > 0) {
           mostrarErroresPaso(errores, "Otros e Instituciones")
-          scrollTop()
-          return
+          scrollTop(); return
         }
         break
-
-      default:
-        break
+      default: break
     }
-
     siguientePaso()
     scrollTop()
   }
+
   const handleAnterior = () => { pasoAnterior(); scrollTop() }
-  // ── Ir a un paso solo si ya fue completado ────────────────
+
   const handleIrAlPaso = (paso) => {
-    // Solo permitir ir hacia atrás o a pasos ya visitados
-    if (paso < pasoActual) {
-      irAlPaso(paso)
-      scrollTop()
-    }
+    if (paso < pasoActual) { irAlPaso(paso); scrollTop() }
   }
 
   // ── Envío final ───────────────────────────────────────────
   const handleEnviar = () => {
-    // Validar campos mínimos antes de abrir el modal
     const p = ficha.personal
     if (!p.dni || !p.nombres || !p.apellido_paterno ||
-      !p.celular || !p.email_personal_1 || !p.dom_direccion) {
+        !p.celular || !p.email_personal_1 || !p.dom_direccion) {
       toast.error("Complete los campos obligatorios del Paso 1 antes de enviar")
       return
     }
     const l = ficha.datos_laborales
     if (!l.dependencia || !l.cargo || !l.email_institucional ||
-      !l.condicion || !l.tipo_personal) {
+        !l.condicion || !l.tipo_personal) {
       toast.error("Complete los campos obligatorios del Paso 2 antes de enviar")
       return
     }
-    // Abrir modal
     setModalVisible(true)
   }
 
-  // ── Envío real tras confirmar en el modal ─────────────────
+  // ── Confirmar envío (nuevo o actualización) ───────────────
   const handleConfirmar = async () => {
     setCargando(true)
+    setModalVisible(false)
+    setPantalla({
+      visible: true, tipo: "cargando",
+      titulo: fase === "edicion" ? "Actualizando datos..." : "Registrando ficha...",
+      subtitulo: "Por favor espere, esto puede tomar unos segundos"
+    })
     try {
       const payload = prepararPayload()
-      console.log("PAYLOAD ENVIADO:", JSON.stringify(payload, null, 2))
-      const respuesta = await personalService.crear(payload)
-      const nuevoId = respuesta.personal.id
+      let nuevoId
 
-      // Subir foto si existe
+      if (fase === "edicion" && personalIdEdicion) {
+        await personalService.actualizar(personalIdEdicion, payload)
+        nuevoId = personalIdEdicion
+        try {
+          await solicitudService.cerrar(personalIdEdicion)
+        } catch { }
+        toast.success("¡Ficha actualizada correctamente!")
+      } else {
+        const respuesta = await personalService.crear(payload)
+        nuevoId = respuesta.personal.id
+        }
+
+      setPantalla({
+        visible: true, tipo: "exito",
+        titulo: fase === "edicion" ? "¡Datos actualizados!" : "¡Ficha registrada!",
+        subtitulo: "Sus datos han sido guardados correctamente en el sistema",
+        duracion: 2000
+      })
+      setTimeout(() => {
+        setPantalla({ visible: false })
+        setPersonalId(nuevoId)
+        setCompletado(true)
+      }, 2000)
+
+      // Subir foto en segundo plano (no bloquea la pantalla de éxito)
       const archivoFoto = ficha.personal._foto_archivo
       if (archivoFoto && nuevoId) {
-        try {
-          await fotosService.subir(nuevoId, archivoFoto)
-        } catch {
-          toast("Ficha guardada. La foto no pudo subirse — puede actualizarla después.",
-            { icon: "⚠️", duration: 5000 })
-        }
+        fotosService.subir(nuevoId, archivoFoto)
+          .then(() => {
+            toast.success("Foto subida correctamente", { duration: 3000 })
+          })
+          .catch(() => {
+            toast("La foto no pudo subirse. Puede actualizarla después.",
+              { icon: "⚠️", duration: 6000 })
+          })
       }
 
-      setModalVisible(false)
-      setPersonalId(nuevoId)
-      setCompletado(true)
-      toast.success("¡Ficha registrada correctamente!")
-
     } catch (error) {
+      setPantalla({ visible: false })
       if (error.message?.includes("DNI")) {
         toast.error(`DNI ya registrado: ${ficha.personal.dni}`)
         setModalVisible(false)
         irAlPaso(1)
       } else {
-        toast.error(error.message || "Error al enviar la ficha")
+        setPantalla({
+          visible: true, tipo: "error",
+          titulo: "Error al guardar",
+          subtitulo: error.message || "Ocurrió un error. Intente nuevamente.",
+          duracion: 3000
+        })
       }
     } finally {
       setCargando(false)
@@ -223,7 +276,6 @@ export default function FormularioPage() {
                       justify-center p-4">
         <div className="form-card max-w-md w-full text-center space-y-5">
 
-          {/* Ícono de éxito animado */}
           <div className="w-20 h-20 rounded-full bg-green-100 flex items-center
                           justify-center mx-auto">
             <svg className="w-10 h-10 text-green-500" fill="none"
@@ -235,7 +287,10 @@ export default function FormularioPage() {
 
           <div>
             <h2 className="text-xl font-bold text-slate-800">
-              ¡Ficha registrada con éxito!
+              {fase === "edicion"
+                ? "¡Ficha actualizada con éxito!"
+                : "¡Ficha registrada con éxito!"
+              }
             </h2>
             <p className="text-sm text-slate-500 mt-2 leading-relaxed">
               Sus datos han sido guardados correctamente en el sistema
@@ -243,11 +298,11 @@ export default function FormularioPage() {
             </p>
           </div>
 
-          {/* Número de registro */}
           {personalId && (
             <div className="bg-primary-50 border border-primary-200
                             rounded-lg p-4 space-y-1">
-              <p className="text-xs text-primary-600 font-semibold uppercase tracking-wide">
+              <p className="text-xs text-primary-600 font-semibold
+                            uppercase tracking-wide">
                 Número de Registro
               </p>
               <p className="text-3xl font-black text-primary-700">
@@ -259,21 +314,23 @@ export default function FormularioPage() {
             </div>
           )}
 
-          {/* Datos del registrado */}
           <div className="bg-slate-50 rounded-lg p-3 text-left space-y-1.5">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-slate-500
+                          uppercase tracking-wide mb-2">
               Datos registrados
             </p>
             <div className="flex justify-between text-xs">
               <span className="text-slate-400">Nombre</span>
               <span className="font-medium text-slate-700">
-                {ficha.personal.apellido_paterno} {ficha.personal.apellido_materno},
-                {" "}{ficha.personal.nombres}
+                {ficha.personal.apellido_paterno} {ficha.personal.apellido_materno},{" "}
+                {ficha.personal.nombres}
               </span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-slate-400">DNI</span>
-              <span className="font-medium text-slate-700">{ficha.personal.dni}</span>
+              <span className="font-medium text-slate-700">
+                {ficha.personal.dni}
+              </span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-slate-400">Cargo</span>
@@ -289,41 +346,53 @@ export default function FormularioPage() {
             </div>
           </div>
 
-          {/* Declaración jurada */}
           <p className="text-xs text-slate-400 italic leading-relaxed">
             Información registrada bajo juramento conforme a la
             Ley N° 27444 — Ley de Procedimiento Administrativo General.
           </p>
 
-          {/* Acciones */}
           <div className="flex flex-col gap-2 pt-1">
             <button
               onClick={() => generarFicha(ficha, personalId)}
-              className="btn-primary w-full justify-center gap-2"
-            >
+              className="btn-primary w-full justify-center gap-2">
               📄 Descargar Ficha Completa
             </button>
             <button
               onClick={() => generarConstancia(ficha, personalId)}
-              className="btn-secondary w-full justify-center gap-2"
-            >
+              className="btn-secondary w-full justify-center gap-2">
               🖨️ Imprimir Constancia de Registro
             </button>
             <button
-              onClick={resetFicha}
+              onClick={() => {
+                resetFicha()
+                setFase("dni")
+                setDniVerificado("")
+                setPersonalIdEdicionPersistido(null)
+                sessionStorage.removeItem("unamba_fase")
+                sessionStorage.removeItem("unamba_dni_verificado")
+                sessionStorage.removeItem("unamba_edicion_id")
+              }}
               className="w-full justify-center text-xs text-slate-400
-                         hover:text-slate-600 transition-colors py-1"
-            >
-              Registrar otro trabajador
+                         hover:text-slate-600 transition-colors py-1">
+              Volver al inicio
             </button>
           </div>
-
         </div>
       </div>
     )
   }
 
-  // ── Render del paso actual ────────────────────────────────
+  // ── Pantalla inicial de DNI ───────────────────────────────
+  if (fase === "dni") {
+    return (
+      <PantallaInicioDNI
+        onNuevoRegistro={handleNuevoRegistro}
+        onEditarRegistro={handleEditarRegistro}
+      />
+    )
+  }
+
+  // ── Formulario multi-paso ─────────────────────────────────
   const renderPaso = () => {
     switch (pasoActual) {
       case 1: return (
@@ -333,6 +402,7 @@ export default function FormularioPage() {
           tocados={tocados}
           fotoPreviewPersistida={fotoPreviewRef.current}
           onFotoCargada={(url) => { fotoPreviewRef.current = url }}
+          dniVerificado={dniVerificado}
         />
       )
       case 2: return (
@@ -396,30 +466,35 @@ export default function FormularioPage() {
       default: return null
     }
   }
+
   return (
     <div className="min-h-screen bg-unamba-light">
       <Toaster position="top-right" />
 
-      {/* ── Modal de bienvenida ───────────────────────────── */}
       {mostrarBienvenida && (
         <ModalBienvenida onComenzar={cerrarBienvenida} />
       )}
 
-      {/* ── Barra de progreso fija (reemplaza el header) ──── */}
+      {/* Banner de modo edición */}
+      {fase === "edicion" && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-amber-500
+                        text-white text-center text-xs font-semibold py-1.5">
+          ✏️ Modo actualización — Modifique los datos necesarios y envíe
+        </div>
+      )}
+
       <BarraProgreso
         pasoActual={pasoActual}
         onIrAlPaso={handleIrAlPaso}
         progresoPaso={progresoPaso}
       />
 
-      {/* ── Contenido principal ───────────────────────────── */}
-      {/* pt-32 para compensar la altura de la barra fija */}
-      <main className="max-w-3xl mx-auto px-4 pt-32 pb-6 space-y-5">
+      <main className={`max-w-3xl mx-auto px-4 pb-6 space-y-5
+                        ${fase === "edicion" ? "pt-36" : "pt-32"}`}>
 
         <div ref={topRef} />
 
-        {/* Aviso de borrador guardado */}
-        {estadoGuardado && pasoActual > 1 && (
+        {estadoGuardado && pasoActual > 1 && fase === "formulario" && (
           <div className="flex items-center justify-between px-4 py-2.5
                           bg-blue-50 border border-blue-200 rounded-form
                           text-xs">
@@ -427,18 +502,20 @@ export default function FormularioPage() {
               <span>💾</span>
               <span>Borrador guardado automáticamente</span>
             </div>
-            <button
-              type="button"
-              onClick={resetFicha}
+            <button type="button" onClick={() => {
+              resetFicha()
+              setFase("dni")
+              setDniVerificado("")
+              sessionStorage.removeItem("unamba_fase")
+              sessionStorage.removeItem("unamba_dni_verificado")
+            }}
               className="text-blue-500 hover:text-blue-700 font-medium
-                         underline underline-offset-2 transition-colors"
-            >
+                         underline underline-offset-2 transition-colors">
               Limpiar y empezar de nuevo
             </button>
           </div>
         )}
 
-        {/* Título del paso actual */}
         <div className="flex items-center gap-2 px-1">
           <span className="text-xs font-semibold text-primary-600
                            uppercase tracking-widest">
@@ -450,10 +527,8 @@ export default function FormularioPage() {
           </span>
         </div>
 
-        {/* Formulario del paso actual */}
         {renderPaso()}
 
-        {/* Botones de navegación fijos */}
         <NavButtons
           pasoActual={pasoActual}
           totalPasos={PASOS_FICHA.length}
@@ -462,16 +537,22 @@ export default function FormularioPage() {
           onEnviar={handleEnviar}
           cargando={cargando}
         />
-
       </main>
 
-      {/* Modal de confirmación */}
       <ModalConfirmacion
         visible={modalVisible}
         onConfirmar={handleConfirmar}
         onCancelar={() => !cargando && setModalVisible(false)}
         cargando={cargando}
         ficha={ficha}
+      />
+      <PantallaEstado
+        tipo={pantalla.tipo}
+        titulo={pantalla.titulo}
+        subtitulo={pantalla.subtitulo}
+        visible={pantalla.visible}
+        duracion={pantalla.duracion}
+        onTerminar={() => setPantalla({ visible: false })}
       />
     </div>
   )
