@@ -103,59 +103,117 @@ export const familiarSchema = z.object({
 export function validarPaso1(personal) {
   const errores = []
 
+  // ── Nombres y apellidos — solo letras ─────────────────
+  const soloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/
   if (!personal.apellido_paterno?.trim())
     errores.push("Apellido paterno es obligatorio")
+  else if (!soloLetras.test(personal.apellido_paterno.trim()))
+    errores.push("Apellido paterno: solo se permiten letras, sin números ni símbolos")
+
   if (!personal.apellido_materno?.trim())
     errores.push("Apellido materno es obligatorio")
+  else if (!soloLetras.test(personal.apellido_materno.trim()))
+    errores.push("Apellido materno: solo se permiten letras, sin números ni símbolos")
+
   if (!personal.nombres?.trim())
     errores.push("Nombres son obligatorios")
+  else if (!soloLetras.test(personal.nombres.trim()))
+    errores.push("Nombres: solo se permiten letras, sin números ni símbolos")
+
+  // ── DNI ───────────────────────────────────────────────
   if (!personal.dni || !/^\d{8}$/.test(personal.dni))
     errores.push("DNI debe tener exactamente 8 dígitos")
+
+  // ── Campos básicos ────────────────────────────────────
   if (!personal.sexo)
     errores.push("Sexo es obligatorio")
-  if (!personal.fecha_nacimiento)
-    errores.push("Fecha de nacimiento es obligatoria")
   if (!personal.estado_civil)
     errores.push("Estado civil es obligatorio")
+
+  // ── Fecha de nacimiento — mínimo 18 años ──────────────
+  if (!personal.fecha_nacimiento) {
+    errores.push("Fecha de nacimiento es obligatoria")
+  } else {
+    const hoy      = new Date()
+    const nacimiento = new Date(personal.fecha_nacimiento)
+    const edad     = hoy.getFullYear() - nacimiento.getFullYear()
+    const cumpleEsteAnio = new Date(
+      hoy.getFullYear(),
+      nacimiento.getMonth(),
+      nacimiento.getDate()
+    )
+    const edadExacta = hoy >= cumpleEsteAnio ? edad : edad - 1
+
+    if (nacimiento > hoy)
+      errores.push("La fecha de nacimiento no puede ser una fecha futura")
+    else if (edadExacta < 18)
+      errores.push(`Debe ser mayor de 18 años para registrarse (edad detectada: ${edadExacta} años)`)
+    else if (edadExacta > 100)
+      errores.push("Verifique la fecha de nacimiento ingresada")
+  }
+
+  // ── Lugar de nacimiento ───────────────────────────────
   if (!personal.nac_departamento?.trim())
     errores.push("Departamento de nacimiento es obligatorio")
   if (!personal.nac_provincia?.trim())
     errores.push("Provincia de nacimiento es obligatoria")
   if (!personal.nac_distrito?.trim())
     errores.push("Distrito de nacimiento es obligatorio")
-  if (!personal.celular || !/^\d{9}$/.test(personal.celular))
+
+  // ── Teléfono fijo — si se ingresa, mínimo 7 dígitos ──
+  if (personal.telefono_fijo && personal.telefono_fijo.trim()) {
+    if (!/^\d{7,9}$/.test(personal.telefono_fijo))
+      errores.push("Teléfono fijo: debe tener entre 7 y 9 dígitos")
+  }
+
+  // ── Celular — obligatorio, debe empezar con 9 ────────
+  if (!personal.celular)
+    errores.push("Celular es obligatorio")
+  else if (!/^\d{9}$/.test(personal.celular))
     errores.push("Celular debe tener exactamente 9 dígitos")
-  if (!personal.email_personal_1 ||
-      !/^[^@]+@[^@]+\.[^@]+$/.test(personal.email_personal_1))
-    errores.push("Email personal inválido")
-  if (personal.email_personal_1 &&
-      /edu\.pe$/i.test(personal.email_personal_1))
+  else if (!personal.celular.startsWith("9"))
+    errores.push("El celular debe empezar con 9 (Ej: 987654321)")
+
+  // ── Email personal 1 ──────────────────────────────────
+  const emailEstricto = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
+  if (!personal.email_personal_1)
+    errores.push("Email personal es obligatorio")
+  else if (!emailEstricto.test(personal.email_personal_1))
+    errores.push("Email personal inválido (Ej: correo@gmail.com)")
+  else if (/edu\.pe$/i.test(personal.email_personal_1))
     errores.push("Email 1: use su correo personal, no el institucional")
-  if (personal.email_personal_2 &&
-      /edu\.pe$/i.test(personal.email_personal_2))
-    errores.push("Email 2: use su correo personal, no el institucional")
+
+  // ── Email personal 2 — si se ingresa, validar ────────
+  if (personal.email_personal_2 && personal.email_personal_2.trim()) {
+    if (!emailEstricto.test(personal.email_personal_2))
+      errores.push("Email personal 2 inválido (Ej: correo@gmail.com)")
+    else if (/edu\.pe$/i.test(personal.email_personal_2))
+      errores.push("Email 2: use su correo personal, no el institucional")
+  }
+
+  // ── Dirección ─────────────────────────────────────────
   if (!personal.dom_direccion?.trim())
     errores.push("Dirección de domicilio es obligatoria")
 
-  // Foto obligatoria
+  // ── Foto ──────────────────────────────────────────────
   if (!personal._foto_archivo && !personal.foto_url)
     errores.push("La foto es obligatoria")
 
-  // Cuenta bancaria obligatoria
+  // ── Cuenta bancaria ───────────────────────────────────
   if (!personal.banco?.trim())
     errores.push("Banco es obligatorio")
   if (!personal.cuenta_numero?.trim())
     errores.push("Número de cuenta es obligatorio")
-  if (personal.cuenta_numero &&
-      !/^\d{6,20}$/.test(personal.cuenta_numero))
+  else if (!/^\d{6,20}$/.test(personal.cuenta_numero))
     errores.push("N° de cuenta: solo dígitos, entre 6 y 20 caracteres")
   if (!personal.cuenta_cci || !/^\d{20}$/.test(personal.cuenta_cci))
     errores.push("CCI debe tener exactamente 20 dígitos")
 
-  // Condicionales
+  // ── Discapacidad ──────────────────────────────────────
   if (personal.tiene_discapacidad && !personal.conadis_registro?.trim())
     errores.push("N° de registro CONADIS es obligatorio")
 
+  // ── Servicio militar — fechas coherentes ──────────────
   if (personal.realizo_serv_militar) {
     if (!personal.serv_militar_rama)
       errores.push("Rama del servicio militar es obligatoria")
@@ -163,22 +221,25 @@ export function validarPaso1(personal) {
       errores.push("Cargo en servicio militar es obligatorio")
     if (!personal.serv_militar_fecha_inicio)
       errores.push("Fecha de inicio del servicio militar es obligatoria")
+    if (personal.serv_militar_fecha_fin &&
+        personal.serv_militar_fecha_inicio &&
+        personal.serv_militar_fecha_fin < personal.serv_militar_fecha_inicio)
+      errores.push("La fecha de fin del servicio militar no puede ser anterior a la fecha de inicio")
   }
 
+  // ── Otros condicionales ───────────────────────────────
   if (personal.tipo_vivienda === "Otro" && !personal.tipo_vivienda_otro?.trim())
     errores.push("Especifique el tipo de vivienda")
-
   if (personal.sistema_pension === "AFP" && !personal.afp_nombre)
     errores.push("Seleccione la AFP")
 
-  // Idiomas y ofimática — si se agregaron deben estar completos
+  // ── Idiomas y ofimática ───────────────────────────────
   personal.idiomas_nativos?.forEach((item, i) => {
     if (!item.idioma?.trim())
       errores.push(`Idioma ${i + 1}: ingrese el nombre del idioma`)
     if (!item.nivel)
       errores.push(`Idioma ${i + 1}: seleccione el nivel`)
   })
-
   personal.ofimatica?.forEach((item, i) => {
     if (!item.programa?.trim())
       errores.push(`Ofimática ${i + 1}: ingrese el programa`)

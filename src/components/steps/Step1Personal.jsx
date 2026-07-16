@@ -50,14 +50,20 @@ export default function Step1Personal({
     apellido_paterno: {
       requerido: true, mensajeRequerido: "El apellido paterno es obligatorio",
       minLength: 2,
+      patron: /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/,
+      mensajePatron: "Solo se permiten letras, sin números ni símbolos",
     },
     apellido_materno: {
       requerido: true, mensajeRequerido: "El apellido materno es obligatorio",
       minLength: 2,
+      patron: /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/,
+      mensajePatron: "Solo se permiten letras, sin números ni símbolos",
     },
     nombres: {
       requerido: true, mensajeRequerido: "Los nombres son obligatorios",
       minLength: 2,
+      patron: /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/,
+      mensajePatron: "Solo se permiten letras, sin números ni símbolos",
     },
     dni: {
       requerido: true, mensajeRequerido: "El DNI es obligatorio",
@@ -68,17 +74,30 @@ export default function Step1Personal({
     },
     fecha_nacimiento: {
       requerido: true, mensajeRequerido: "La fecha de nacimiento es obligatoria",
+      validar: (v) => {
+        if (!v) return true
+        const hoy = new Date()
+        const nac = new Date(v)
+        if (nac > hoy) return "La fecha no puede ser futura"
+        const edad = hoy.getFullYear() - nac.getFullYear()
+        const cumple = new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate())
+        const edadExacta = hoy >= cumple ? edad : edad - 1
+        if (edadExacta < 18) return `Debe tener al menos 18 años (edad: ${edadExacta})`
+        if (edadExacta > 100) return "Verifique la fecha ingresada"
+        return true
+      },
     },
     estado_civil: {
       requerido: true, mensajeRequerido: "Seleccione el estado civil",
     },
     celular: {
       requerido: true, mensajeRequerido: "El celular es obligatorio",
-      patron: /^\d{9}$/, mensajePatron: "Debe tener 9 dígitos",
+      patron: /^9\d{8}$/, mensajePatron: "Debe tener 9 dígitos y empezar con 9 (Ej: 987654321)",
     },
     email_personal_1: {
       requerido: true, mensajeRequerido: "El email es obligatorio",
-      patron: /^[^@]+@[^@]+\.[^@]+$/, mensajePatron: "Email inválido",
+      patron: /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/,
+      mensajePatron: "Email inválido (Ej: correo@gmail.com)",
       validar: (v) => /edu\.pe$/i.test(v)
         ? "Use su correo personal, no el institucional" : true,
     },
@@ -301,7 +320,12 @@ export default function Step1Personal({
               e.target.value.replace(/\D/g, ""))}
             placeholder="Ej: 083321456" maxLength={9}
             tocado={!!datos.telefono_fijo}
-            valido={!!datos.telefono_fijo} />
+            valido={!!datos.telefono_fijo &&
+              /^\d{7,9}$/.test(datos.telefono_fijo)}
+            error={datos.telefono_fijo &&
+              !/^\d{7,9}$/.test(datos.telefono_fijo)
+              ? "Debe tener entre 7 y 9 dígitos" : ""}
+          />
           <Input label="Celular" required maxLength={9}
             placeholder="Ej: 987654321"
             {...campo("celular")}
@@ -318,9 +342,18 @@ export default function Step1Personal({
           <Input label="Email Personal 2" type="email"
             value={datos.email_personal_2 ?? ""}
             onChange={(e) => set("email_personal_2", e.target.value)}
-            placeholder="Opcional"
+            placeholder="Opcional (otro correo personal)"
             tocado={!!datos.email_personal_2}
-            valido={!!datos.email_personal_2} />
+            valido={!!datos.email_personal_2 &&
+              /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(datos.email_personal_2) &&
+              !/edu\.pe$/i.test(datos.email_personal_2)}
+            error={datos.email_personal_2 && (
+              !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(datos.email_personal_2)
+                ? "Email inválido (Ej: correo@gmail.com)"
+                : /edu\.pe$/i.test(datos.email_personal_2)
+                ? "Use su correo personal, no el institucional"
+                : ""
+            )} />
         </FieldGrid>
       </div>
 
@@ -384,12 +417,13 @@ export default function Step1Personal({
           <Input label="Licencia de Conducir"
             value={datos.licencia_conducir ?? ""}
             onChange={(e) => set("licencia_conducir", e.target.value)}
-            placeholder="Ej: Q12345678"
+            placeholder="Si/No"
             tocado={!!datos.licencia_conducir}
             valido={!!datos.licencia_conducir} />
           <Input label="Afil. ESSALUD"
             value={datos.afiliacion_essalud ?? ""}
             onChange={(e) => set("afiliacion_essalud", e.target.value)}
+            placeholder="N° de asegurado ESSALUD"
             tocado={!!datos.afiliacion_essalud}
             valido={!!datos.afiliacion_essalud} />
           <Select label="Grupo Sanguíneo" opciones={GRUPO_SANGUINEO}
@@ -497,20 +531,21 @@ export default function Step1Personal({
           <Input label="Abreviatura"
             value={datos.abreviatura_prof ?? ""}
             onChange={(e) => set("abreviatura_prof", e.target.value)}
-            placeholder="Ej: Ing."
+            placeholder="Ej: Ing. de Sistemas"
             tocado={!!datos.abreviatura_prof}
             valido={!!datos.abreviatura_prof} />
           <Input label="Colegio Profesional"
             value={datos.colegio_prof_nombre ?? ""}
             onChange={(e) => set("colegio_prof_nombre", e.target.value)}
-            placeholder="Ej: CIP"
+            placeholder="Ej: Colegio de Ingenieros del Perú"
             tocado={!!datos.colegio_prof_nombre}
             valido={!!datos.colegio_prof_nombre} />
           <Input label="N° de Colegiatura"
             value={datos.colegio_prof_numero ?? ""}
             onChange={(e) => set("colegio_prof_numero", e.target.value)}
             tocado={!!datos.colegio_prof_numero}
-            valido={!!datos.colegio_prof_numero} />
+            valido={!!datos.colegio_prof_numero} 
+            placeholder="Ingresar número de colegiatura"/>
           <Input label="Fecha de Colegiatura" type="date"
             value={datos.colegio_prof_fecha ?? ""}
             onChange={(e) => set("colegio_prof_fecha", e.target.value)}
@@ -579,7 +614,14 @@ export default function Step1Personal({
               value={datos.serv_militar_fecha_fin ?? ""}
               onChange={(e) => set("serv_militar_fecha_fin", e.target.value)}
               tocado={!!datos.serv_militar_fecha_fin}
-              valido={!!datos.serv_militar_fecha_fin} />
+              valido={!!datos.serv_militar_fecha_fin &&
+                (!datos.serv_militar_fecha_inicio ||
+                  datos.serv_militar_fecha_fin >= datos.serv_militar_fecha_inicio)}
+              error={datos.serv_militar_fecha_fin &&
+                datos.serv_militar_fecha_inicio &&
+                datos.serv_militar_fecha_fin < datos.serv_militar_fecha_inicio
+                ? "La fecha de fin no puede ser anterior a la fecha de inicio" : ""
+              } />
           </FieldGrid>
         )}
       </div>
