@@ -39,6 +39,12 @@ export default function Step2Laboral({ datos, onChange, tocados: tocadosGlobales
     fecha_ingreso: {
       requerido: true,
       mensajeRequerido: "La fecha de ingreso es obligatoria",
+      validar: (v) => {
+        if (!v) return true
+        const hoy = new Date().toISOString().split("T")[0]
+        if (v > hoy) return "La fecha de ingreso no puede ser una fecha futura"
+        return true
+      },
     },
     condicion: {
       requerido: true,
@@ -178,13 +184,13 @@ export default function Step2Laboral({ datos, onChange, tocados: tocadosGlobales
           <div className="sm:col-span-2">
             <Input
               label="Dependencia / Unidad Orgánica" required
-              placeholder="Ej: Facultad de Ingeniería"
+              placeholder="Ej: Facultad de Ingeniería, Dirección de RR.HH., Escuela de Sistemas"
               {...campo("dependencia")}
             />
           </div>
           <Input
             label="Cargo que Desempeña" required
-            placeholder="Ej: Docente Ordinario"
+            placeholder="Ej: Docente Ordinario, Técnico Administrativo, Auxiliar"
             {...campo("cargo")}
           />
           <Input
@@ -441,6 +447,7 @@ export default function Step2Laboral({ datos, onChange, tocados: tocadosGlobales
         <FieldGrid cols={2}>
           <Input
             label="Fecha de Ingreso" required type="date"
+            max={new Date().toISOString().split("T")[0]}
             {...campo("fecha_ingreso")}
           />
         </FieldGrid>

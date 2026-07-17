@@ -279,6 +279,8 @@ export function validarPaso2(laboral) {
     errores.push("Cargo es obligatorio")
   if (!laboral.fecha_ingreso)
     errores.push("Fecha de ingreso es obligatoria")
+  else if (laboral.fecha_ingreso > new Date().toISOString().split("T")[0])
+    errores.push("La fecha de ingreso no puede ser una fecha futura")
   if (!laboral.email_institucional ||
       !laboral.email_institucional.endsWith("@unamba.edu.pe"))
     errores.push("Email institucional debe terminar en @unamba.edu.pe")
