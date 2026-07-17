@@ -5,7 +5,7 @@ import {
   Filter, ChevronRight, AlertCircle, RefreshCw,
   User, ChevronLeft, ChevronRight as ChevronR,
   CheckCircle2, X, TrendingUp, Award, Briefcase,
-  Clock,
+  Clock, Download,
 } from "lucide-react"
 import { adminService, authService, solicitudService } from "../../services/adminApi"
 import { generarFicha }    from "../../utils/generarFicha"
@@ -293,6 +293,31 @@ export default function DashboardAdmin() {
     setTimeout(() => navigate("/admin/login", { replace: true }), 800)
   }
 
+  const handleExportarExcel = async () => {
+    setPantalla({
+      visible: true, tipo: "cargando",
+      titulo: "Generando Excel...",
+      subtitulo: "Preparando el archivo con todos los datos del personal"
+    })
+    try {
+      const res = await adminService.exportarExcel()
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement("a")
+      link.href = url
+      const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, "")
+      link.setAttribute("download", `personal_unamba_${fecha}.xlsx`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      setPantalla({ visible: false })
+      mostrarToast("Excel exportado correctamente", "ok")
+    } catch {
+      setPantalla({ visible: false })
+      mostrarToast("Error al exportar el Excel", "error")
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
 
@@ -350,6 +375,17 @@ export default function DashboardAdmin() {
               <Clock size={13} />
               <span className="hidden sm:inline">Solicitudes</span>
               <BadgeSolicitudes />
+            </button>
+            <button
+              onClick={handleExportarExcel}
+              className="relative flex items-center gap-1.5 text-xs
+                         font-semibold rounded-lg transition-colors"
+              style={{ padding: "6px 14px",
+                       background: "rgba(255,255,255,0.08)",
+                       border: "1px solid rgba(255,255,255,0.15)",
+                       color: "rgba(255,255,255,0.9)" }}>
+              <Download size={13} />
+              <span className="hidden sm:inline">Exportar Excel</span>
             </button>
           </div>
 

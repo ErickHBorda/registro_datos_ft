@@ -38,6 +38,11 @@ export const adminService = {
     adminApi.get(`/admin/personal/${id}`, { timeout: 120000 }),
   eliminarPersonal: (id) =>
     adminApi.delete(`/admin/personal/${id}`),
+  exportarExcel: () =>
+    adminApi.get("/admin/exportar/excel", {
+      responseType: "blob",
+      timeout: 120000,
+    }),
 }
 
 export const solicitudService = {
