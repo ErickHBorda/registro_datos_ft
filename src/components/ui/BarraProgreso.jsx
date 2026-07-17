@@ -1,7 +1,7 @@
 import { Check, ChevronRight } from "lucide-react"
 import { PASOS_FICHA } from "../../utils/constants"
 
-export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso, offsetTop = 0 }) {
+export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso, offsetTop = 0, onCancelar }) {
   const totalPasos = PASOS_FICHA.length
   const porcentaje = progresoPaso ?? Math.round(((pasoActual - 1) / (totalPasos - 1)) * 100)
   const pasoInfo = PASOS_FICHA[pasoActual - 1]
@@ -94,17 +94,33 @@ export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso, of
             </div>
           </div>
 
-          {/* ── Lado derecho: Porcentaje ────────────────── */}
-          <div className="shrink-0 text-right">
-            <div className="flex items-end gap-0.5 justify-end">
-              <span className="text-white font-black text-2xl leading-none">
-                {porcentaje}
-              </span>
-              <span className="text-blue-300 text-sm font-bold mb-0.5">%</span>
+          {/* ── Lado derecho: Porcentaje + Cancelar ─────── */}
+          <div className="shrink-0 text-right flex items-center gap-3">
+            <div>
+              <div className="flex items-end gap-0.5 justify-end">
+                <span className="text-white font-black text-2xl leading-none">
+                  {porcentaje}
+                </span>
+                <span className="text-blue-300 text-sm font-bold mb-0.5">%</span>
+              </div>
+              <p className="text-blue-300 text-xs">
+                {pasoActual} de {totalPasos} pasos
+              </p>
             </div>
-            <p className="text-blue-300 text-xs">
-              {pasoActual} de {totalPasos} pasos
-            </p>
+            {onCancelar && (
+              <button
+                type="button"
+                onClick={onCancelar}
+                title="Cancelar y volver al inicio"
+                className="flex items-center gap-1.5 px-2.5 py-1.5
+                           bg-white/10 hover:bg-red-500/80
+                           text-white text-xs font-semibold
+                           rounded-lg border border-white/20
+                           hover:border-red-400 transition-all duration-200">
+                <span>✕</span>
+                <span className="hidden sm:inline">Cancelar</span>
+              </button>
+            )}
           </div>
 
         </div>

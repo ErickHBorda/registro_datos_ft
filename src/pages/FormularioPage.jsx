@@ -85,7 +85,8 @@ export default function FormularioPage() {
   const scrollTop = () =>
     topRef.current?.scrollIntoView({ behavior: "smooth" })
 
-  const [modalVisible, setModalVisible] = useState(false)
+  const [modalVisible,   setModalVisible]   = useState(false)
+  const [modalCancelar,  setModalCancelar]  = useState(false)
   const [pantalla, setPantalla] = useState({ visible: false, tipo: "cargando", titulo: "", subtitulo: "" })
 
   // ── Handlers de PantallaInicioDNI ────────────────────────
@@ -269,6 +270,20 @@ export default function FormularioPage() {
     }
   }
 
+  const handleCancelar = () => setModalCancelar(true)
+
+  const confirmarCancelar = () => {
+    // Limpiar todo y volver al inicio
+    resetFicha()
+    setFase("dni")
+    setDniVerificado("")
+    setPersonalIdEdicionPersistido(null)
+    sessionStorage.removeItem("unamba_fase")
+    sessionStorage.removeItem("unamba_dni_verificado")
+    sessionStorage.removeItem("unamba_edicion_id")
+    localStorage.removeItem("unamba_ficha_2025")
+    setModalCancelar(false)
+  }
   // ── Pantalla de éxito ─────────────────────────────────────
   if (completado) {
     return (
@@ -487,6 +502,7 @@ export default function FormularioPage() {
         onIrAlPaso={handleIrAlPaso}
         progresoPaso={progresoPaso}
         offsetTop={fase === "edicion" ? 28 : 0}
+        onCancelar={handleCancelar}
       />
       <main className="max-w-3xl mx-auto px-4 pb-6 pt-6 space-y-5">
 
@@ -552,6 +568,51 @@ export default function FormularioPage() {
         duracion={pantalla.duracion}
         onTerminar={() => setPantalla({ visible: false })}
       />
+      {/* Modal de confirmación de cancelación */}
+      {modalCancelar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => setModalCancelar(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl
+                          w-full max-w-sm overflow-hidden">
+            <div className="bg-red-500 px-5 py-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center
+                              justify-center shrink-0 text-white text-lg">
+                ✕
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-sm">
+                  ¿Cancelar el registro?
+                </h3>
+                <p className="text-red-200 text-xs mt-0.5">
+                  Se perderán todos los datos ingresados
+                </p>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {fase === "edicion"
+                  ? "Se cancelará la actualización y volverá a la pantalla de inicio. Los datos actuales de su ficha no serán modificados."
+                  : "Se cancelará el registro y volverá a la pantalla de inicio. Tendrá que ingresar su DNI nuevamente para continuar."
+                }
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setModalCancelar(false)}
+                  className="btn-secondary flex-1 justify-center">
+                  Continuar llenando
+                </button>
+                <button
+                  onClick={confirmarCancelar}
+                  className="btn-primary flex-1 justify-center
+                             bg-red-600 hover:bg-red-700 focus:ring-red-500">
+                  Sí, cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
