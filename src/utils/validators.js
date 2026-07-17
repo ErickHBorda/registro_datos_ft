@@ -247,6 +247,26 @@ export function validarPaso1(personal) {
       errores.push(`Ofimática ${i + 1}: seleccione el nivel`)
   })
 
+  // ── Colegio profesional — si uno está, todos son obligatorios ──
+  const tieneAlgunoColegio = !!(
+    personal.colegio_prof_nombre?.trim() ||
+    personal.denominacion_prof?.trim() ||
+    personal.colegio_prof_numero?.trim() ||
+    personal.colegio_prof_fecha
+  )
+  if (tieneAlgunoColegio) {
+    if(!personal.denominacion_prof?.trim())
+      errores.push("Colegio profesional: ingrese la denominación profesional")
+    if (!personal.colegio_prof_nombre?.trim())
+      errores.push("Colegio profesional: ingrese el nombre del colegio")
+    if (!personal.colegio_prof_numero?.trim())
+      errores.push("Colegio profesional: ingrese el número de colegiatura")
+    if (!personal.colegio_prof_fecha)
+      errores.push("Colegio profesional: ingrese la fecha de colegiatura")
+    else if (personal.colegio_prof_fecha > new Date().toISOString().split("T")[0])
+      errores.push("Colegio profesional: la fecha de colegiatura no puede ser futura")
+  }
+
   return errores
 }
 

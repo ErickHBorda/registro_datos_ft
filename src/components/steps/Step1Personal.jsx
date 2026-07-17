@@ -548,9 +548,15 @@ export default function Step1Personal({
             placeholder="Ingresar número de colegiatura"/>
           <Input label="Fecha de Colegiatura" type="date"
             value={datos.colegio_prof_fecha ?? ""}
+            max={new Date().toISOString().split("T")[0]}
             onChange={(e) => set("colegio_prof_fecha", e.target.value)}
             tocado={!!datos.colegio_prof_fecha}
-            valido={!!datos.colegio_prof_fecha} />
+            valido={!!datos.colegio_prof_fecha &&
+              datos.colegio_prof_fecha <= new Date().toISOString().split("T")[0]}
+            error={datos.colegio_prof_fecha &&
+              datos.colegio_prof_fecha > new Date().toISOString().split("T")[0]
+              ? "La fecha de colegiatura no puede ser futura" : ""
+            } />
         </FieldGrid>
       </div>
 
