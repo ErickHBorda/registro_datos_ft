@@ -115,7 +115,13 @@ function FormExpLaboral({ item, onChange }) {
           value={item.fecha_culminacion ?? ""}
           onChange={(e) => onChange("fecha_culminacion", e.target.value)}
           tocado={!!item.fecha_culminacion}
-          valido={!!item.fecha_culminacion}
+          valido={!!item.fecha_culminacion &&
+            (!item.fecha_inicio ||
+              item.fecha_culminacion >= item.fecha_inicio)}
+          error={item.fecha_culminacion && item.fecha_inicio &&
+            item.fecha_culminacion < item.fecha_inicio
+            ? "La fecha de culminación no puede ser anterior a la fecha de inicio"
+            : ""}
         />
       </FieldGrid>
 
@@ -178,7 +184,13 @@ function FormExpDocente({ item, onChange }) {
           value={item.fecha_culminacion ?? ""}
           onChange={(e) => onChange("fecha_culminacion", e.target.value)}
           tocado={!!item.fecha_culminacion}
-          valido={!!item.fecha_culminacion}
+          valido={!!item.fecha_culminacion &&
+            (!item.fecha_inicio ||
+              item.fecha_culminacion >= item.fecha_inicio)}
+          error={item.fecha_culminacion && item.fecha_inicio &&
+            item.fecha_culminacion < item.fecha_inicio
+            ? "La fecha de culminación no puede ser anterior a la fecha de inicio"
+            : ""}
         />
       </FieldGrid>
 
@@ -346,6 +358,9 @@ export default function Step5Experiencia({
         errores.push("Nombre de la entidad es obligatorio")
       if (!item.fecha_inicio)
         errores.push("Fecha de inicio es obligatoria")
+      if (item.fecha_culminacion && item.fecha_inicio &&
+          item.fecha_culminacion < item.fecha_inicio)
+        errores.push("La fecha de culminación no puede ser anterior a la fecha de inicio")
       if (errores.length > 0) {
         mostrarErroresPaso(errores, "Experiencia Docente")
         return
@@ -364,6 +379,9 @@ export default function Step5Experiencia({
         errores.push("Cargo desempeñado es obligatorio")
       if (!item.fecha_inicio)
         errores.push("Fecha de inicio es obligatoria")
+      if (item.fecha_culminacion && item.fecha_inicio &&
+          item.fecha_culminacion < item.fecha_inicio)
+        errores.push("La fecha de culminación no puede ser anterior a la fecha de inicio")
       if (errores.length > 0) {
         const titulo = tipo === "estatal"
           ? "Experiencia Estatal"

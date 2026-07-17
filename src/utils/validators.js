@@ -390,6 +390,9 @@ export function validarPaso5(expLaboral, expDocente) {
       errores.push(`Experiencia laboral ${i + 1}: cargo es obligatorio`)
     if (!e.fecha_inicio)
       errores.push(`Experiencia laboral ${i + 1}: fecha de inicio es obligatoria`)
+    if (e.fecha_culminacion && e.fecha_inicio &&
+        e.fecha_culminacion < e.fecha_inicio)
+      errores.push(`Experiencia laboral ${i + 1}: la fecha de culminación no puede ser anterior a la fecha de inicio`)
   })
 
   expDocente.forEach((e, i) => {
@@ -397,8 +400,11 @@ export function validarPaso5(expLaboral, expDocente) {
       errores.push(`Experiencia docente ${i + 1}: nombre de entidad es obligatorio`)
     if (!e.fecha_inicio)
       errores.push(`Experiencia docente ${i + 1}: fecha de inicio es obligatoria`)
+    if (e.fecha_culminacion && e.fecha_inicio &&
+        e.fecha_culminacion < e.fecha_inicio)
+      errores.push(`Experiencia docente ${i + 1}: la fecha de culminación no puede ser anterior a la fecha de inicio`)
   })
-
+  
   return errores
 }
 
