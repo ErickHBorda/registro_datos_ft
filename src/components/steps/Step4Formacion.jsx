@@ -187,7 +187,7 @@ function FormFormacionModal({ item, onChange }) {
                 />
                 <Input
                     label="Mención"
-                    placeholder="Ej: Cum Laude"
+                    placeholder="Ej: Con mención en Gestión Pública"
                     value={item.mencion ?? ""}
                     onChange={(e) => onChange("mencion", e.target.value)}
                     tocado={!!item.mencion} valido={!!item.mencion}
@@ -204,7 +204,14 @@ function FormFormacionModal({ item, onChange }) {
                     label="Fecha de Conclusión" type="date"
                     value={item.fecha_conclusion ?? ""}
                     onChange={(e) => onChange("fecha_conclusion", e.target.value)}
-                    tocado={!!item.fecha_conclusion} valido={!!item.fecha_conclusion}
+                    tocado={!!item.fecha_conclusion}
+                    valido={!!item.fecha_conclusion &&
+                        (!item.fecha_inicio ||
+                            item.fecha_conclusion >= item.fecha_inicio)}
+                    error={item.fecha_conclusion && item.fecha_inicio &&
+                        item.fecha_conclusion < item.fecha_inicio
+                        ? "La fecha de conclusión no puede ser anterior a la fecha de inicio"
+                        : ""}
                 />
             </FieldGrid>
             <Input
@@ -223,8 +230,42 @@ function FormOtroEstudioModal({ item, onChange }) {
     const tocadosIniciales = Object.fromEntries(
         Object.keys(reglasOtroEstudio).map((k) => [k, !!item[k]])
     )
-    const { props: vProps } = useValidacion(reglasOtroEstudio, tocadosIniciales)
-
+    const reglasExtendidas = {
+        ...reglasOtroEstudio,
+        duracion_horas: {
+            requerido: false,
+            validar: (v) => {
+                if (!v) return true
+                if (parseInt(v) < 1) return "La duración debe ser al menos 1 hora"
+                return true
+            },
+        },
+        fecha_fin: {
+            requerido: false,
+            validar: (v) => {
+                if (!v || !item.fecha_inicio) return true
+                if (v < item.fecha_inicio)
+                    return "La fecha de fin no puede ser anterior a la fecha de inicio"
+                return true
+            },
+        },
+        fecha_conclusion: {
+            requerido: false,
+            validar: (v) => {
+                if (!v || !item.fecha_inicio) return true
+                if (v < item.fecha_inicio)
+                    return "La fecha de conclusión no puede ser anterior a la fecha de inicio"
+                return true
+            },
+        },
+    }
+    const tocadosExtendidos = {
+        ...tocadosIniciales,
+        duracion_horas: !!item.duracion_horas,
+        fecha_fin:      !!item.fecha_fin,
+        fecha_emision:  !!item.fecha_emision,
+    }
+    const { props: vProps } = useValidacion(reglasExtendidas, tocadosExtendidos)
     const campo = (nombre) => ({
         value: item[nombre] ?? "",
         ...vProps(nombre, item[nombre]),
@@ -250,9 +291,13 @@ function FormOtroEstudioModal({ item, onChange }) {
                 <Input
                     label="Duración (horas)" type="number" min={1}
                     placeholder="Ej: 120"
-                    value={item.duracion_horas ?? ""}
-                    onChange={(e) => onChange("duracion_horas", e.target.value)}
-                    tocado={!!item.duracion_horas} valido={!!item.duracion_horas}
+                    {...campo("duracion_horas")}
+                    onChange={(e) => {
+                        const val = e.target.value
+                        vProps("duracion_horas", item.duracion_horas).onChange(e)
+                        if (val === "" || parseInt(val) >= 1)
+                            onChange("duracion_horas", val)
+                    }}
                 />
             </FieldGrid>
             <FieldGrid cols={3}>
@@ -264,9 +309,7 @@ function FormOtroEstudioModal({ item, onChange }) {
                 />
                 <Input
                     label="Fecha de Fin" type="date"
-                    value={item.fecha_fin ?? ""}
-                    onChange={(e) => onChange("fecha_fin", e.target.value)}
-                    tocado={!!item.fecha_fin} valido={!!item.fecha_fin}
+                    {...campo("fecha_fin")}
                 />
                 <Input
                     label="Fecha de Emisión" type="date"
@@ -425,6 +468,9 @@ export default function Step4Formacion({
                 errores.push("Estado es obligatorio")
             if (!item.centro_estudios?.trim())
                 errores.push("Centro de estudios es obligatorio")
+            if (item.fecha_inicio && item.fecha_conclusion &&
+                item.fecha_conclusion < item.fecha_inicio)
+                errores.push("La fecha de conclusión no puede ser anterior a la fecha de inicio")
             if (errores.length > 0) {
                 mostrarErroresPaso(errores, modal.nivel)
                 return
@@ -441,6 +487,11 @@ export default function Step4Formacion({
                 errores.push("Nombre del curso es obligatorio")
             if (!item.centro_estudios?.trim())
                 errores.push("Centro de estudios es obligatorio")
+            if (item.fecha_inicio && item.fecha_fin &&
+                item.fecha_fin < item.fecha_inicio)
+                errores.push("La fecha de fin no puede ser anterior a la fecha de inicio")
+            if (item.duracion_horas && parseInt(item.duracion_horas) < 1)
+                errores.push("La duración debe ser al menos 1 hora")
             if (errores.length > 0) {
                 mostrarErroresPaso(errores, modal.nivel)
                 return

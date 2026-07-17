@@ -357,6 +357,10 @@ export function validarPaso4(formacion, otrosEstudios) {
       errores.push(`Formación ${i + 1} (${f.nivel}): estado es obligatorio`)
     if (!f.centro_estudios?.trim())
       errores.push(`Formación ${i + 1} (${f.nivel}): centro de estudios es obligatorio`)
+    // Fechas coherentes
+    if (f.fecha_inicio && f.fecha_conclusion &&
+        f.fecha_conclusion < f.fecha_inicio)
+      errores.push(`Formación ${i + 1} (${f.nivel}): la fecha de conclusión no puede ser anterior a la fecha de inicio`)
   })
 
   otrosEstudios.forEach((e, i) => {
@@ -364,6 +368,13 @@ export function validarPaso4(formacion, otrosEstudios) {
       errores.push(`${e.tipo} ${i + 1}: nombre del curso es obligatorio`)
     if (!e.centro_estudios?.trim())
       errores.push(`${e.tipo} ${i + 1}: centro de estudios es obligatorio`)
+    // Fechas coherentes
+    if (e.fecha_inicio && e.fecha_fin &&
+        e.fecha_fin < e.fecha_inicio)
+      errores.push(`${e.tipo} ${i + 1}: la fecha de fin no puede ser anterior a la fecha de inicio`)
+    // Duración de horas válida
+    if (e.duracion_horas && parseInt(e.duracion_horas) < 1)
+      errores.push(`${e.tipo} ${i + 1}: la duración debe ser al menos 1 hora`)
   })
 
   return errores
