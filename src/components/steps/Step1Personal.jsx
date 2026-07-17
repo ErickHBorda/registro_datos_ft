@@ -42,6 +42,7 @@ export default function Step1Personal({
     return null
   })
   const [mostrarTarjeta, setMostrarTarjeta] = useState(false)
+  const [errorFoto,      setErrorFoto]      = useState("")
 
   const set = (campo, valor) => onChange("personal", campo, valor)
 
@@ -163,13 +164,34 @@ export default function Step1Personal({
   })
 
   // ── Foto ───────────────────────────────────────────────
+  const TIPOS_PERMITIDOS  = ["image/jpeg", "image/png", "image/webp"]
+  const TAMANO_MAXIMO_MB  = 5
+  const TAMANO_MAXIMO_BYTES = TAMANO_MAXIMO_MB * 1024 * 1024
+
   const handleFoto = (e) => {
     const archivo = e.target.files[0]
     if (!archivo) return
+
+    // Validar tipo
+    if (!TIPOS_PERMITIDOS.includes(archivo.type)) {
+      setErrorFoto("Formato no permitido. Solo se acepta JPG, PNG o WebP.")
+      e.target.value = ""
+      return
+    }
+
+    // Validar tamaño
+    if (archivo.size > TAMANO_MAXIMO_BYTES) {
+      const tamanioMB = (archivo.size / 1024 / 1024).toFixed(1)
+      setErrorFoto(`El archivo pesa ${tamanioMB}MB. El máximo permitido es 5MB.`)
+      e.target.value = ""
+      return
+    }
+
+    setErrorFoto("")
     const url = URL.createObjectURL(archivo)
     setFotoPreview(url)
     set("_foto_archivo", archivo)
-    onFotoCargada?.(url)  // persiste la URL en FormularioPage
+    onFotoCargada?.(url)
   }
 
   // ── Idiomas ────────────────────────────────────────────
@@ -243,9 +265,17 @@ export default function Step1Personal({
               </span>
               <br />
               <span className="text-slate-400">JPG/PNG/WebP · Máx. 5MB</span>
-              <br />
-              <span className="text-slate-300 text-[10px]">No se acepta AVIF/HEIC</span>
             </p>
+            {errorFoto && (
+              <div className="mt-1.5 flex items-start gap-1.5 px-2 py-1.5
+                              bg-red-50 border border-red-200 rounded-lg
+                              max-w-[120px]">
+                <AlertCircle size={11} className="text-red-500 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-red-600 leading-tight">
+                  {errorFoto}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 space-y-4">
