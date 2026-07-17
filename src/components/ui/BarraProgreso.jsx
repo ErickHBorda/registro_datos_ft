@@ -1,14 +1,15 @@
 import { Check, ChevronRight } from "lucide-react"
 import { PASOS_FICHA } from "../../utils/constants"
 
-export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso }) {
+export default function BarraProgreso({ pasoActual, onIrAlPaso, progresoPaso, offsetTop = 0 }) {
   const totalPasos = PASOS_FICHA.length
   const porcentaje = progresoPaso ?? Math.round(((pasoActual - 1) / (totalPasos - 1)) * 100)
   const pasoInfo = PASOS_FICHA[pasoActual - 1]
   const pasoSig = PASOS_FICHA[pasoActual] || null
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-30 bg-white shadow-md">
+    <div className="fixed left-0 right-0 z-30 bg-white shadow-md"
+      style={{ top: `${offsetTop}px` }}>
 
       {/* ══ FRANJA SUPERIOR ════════════════════════════════ */}
       <div className="bg-gradient-to-r from-unamba-blue via-primary-700
