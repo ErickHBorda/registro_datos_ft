@@ -100,8 +100,14 @@ function FormFamiliar({ item, onChange }) {
       <FieldGrid cols={2}>
         <Input label="Fecha de Nacimiento" type="date"
           value={item.fecha_nacimiento ?? ""}
+          max={new Date().toISOString().split("T")[0]}
           onChange={(e) => onChange("fecha_nacimiento", e.target.value)}
-          tocado={!!item.fecha_nacimiento} valido={!!item.fecha_nacimiento}
+          tocado={!!item.fecha_nacimiento}
+          valido={!!item.fecha_nacimiento &&
+            item.fecha_nacimiento <= new Date().toISOString().split("T")[0]}
+          error={item.fecha_nacimiento &&
+            item.fecha_nacimiento > new Date().toISOString().split("T")[0]
+            ? "La fecha de nacimiento no puede ser futura" : ""}
         />
         <div className="flex items-end pb-1">
           <Checkbox label="Vive con el trabajador"
@@ -258,11 +264,33 @@ export default function Step3Familiares({ datos, onChange }) {
     if (itemActual.dni && !/^\d{8}$/.test(itemActual.dni))
       errores.push("DNI debe tener 8 dígitos")
 
+    // Validar fecha de nacimiento del familiar
+    if (itemActual.fecha_nacimiento) {
+      const hoy  = new Date()
+      const fnac = new Date(itemActual.fecha_nacimiento)
+      if (fnac > hoy)
+        errores.push("La fecha de nacimiento del familiar no puede ser futura")
+      else {
+        const edad = hoy.getFullYear() - fnac.getFullYear()
+        const cumple = new Date(hoy.getFullYear(), fnac.getMonth(), fnac.getDate())
+        const edadExacta = hoy >= cumple ? edad : edad - 1
+        if (edadExacta > 120)
+          errores.push("Verifique la fecha de nacimiento del familiar")
+      }
+    }
+
+    // Bloquear cónyuge duplicado — solo se permite uno
+    if (itemActual.parentesco === "Cónyuge" && indexActual === null) {
+      const yaExisteConyuge = datos.some((f) => f.parentesco === "Cónyuge")
+      if (yaExisteConyuge) {
+        errores.push("Ya registró un cónyuge. Solo se permite uno por trabajador.")
+      }
+    }
+
     if (errores.length > 0) {
       mostrarErroresPaso(errores, "Datos del familiar")
       return
     }
-
     if (indexActual !== null) {
       const lista = [...datos]
       lista[indexActual] = itemActual

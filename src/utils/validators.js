@@ -338,6 +338,12 @@ export function validarPaso3(familiares) {
       errores.push(`Familiar ${n}: parentesco es obligatorio`)
     if (f.dni && !/^\d{8}$/.test(f.dni))
       errores.push(`Familiar ${n}: DNI debe tener 8 dígitos`)
+    if (f.fecha_nacimiento) {
+      const hoy  = new Date()
+      const fnac = new Date(f.fecha_nacimiento)
+      if (fnac > hoy)
+        errores.push(`Familiar ${n}: la fecha de nacimiento no puede ser futura`)
+    }
   })
 
   return errores
