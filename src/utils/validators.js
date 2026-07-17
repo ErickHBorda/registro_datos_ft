@@ -368,13 +368,21 @@ export function validarPaso4(formacion, otrosEstudios) {
       errores.push(`${e.tipo} ${i + 1}: nombre del curso es obligatorio`)
     if (!e.centro_estudios?.trim())
       errores.push(`${e.tipo} ${i + 1}: centro de estudios es obligatorio`)
-    // Fechas coherentes
+    if (!e.fecha_inicio)
+      errores.push(`${e.tipo} ${i + 1}: fecha de inicio es obligatoria`)
+    if (!e.fecha_fin)
+      errores.push(`${e.tipo} ${i + 1}: fecha de fin es obligatoria`)
+    if (!e.fecha_emision)
+      errores.push(`${e.tipo} ${i + 1}: fecha de emisión es obligatoria`)
+    if (!e.duracion_horas)
+      errores.push(`${e.tipo} ${i + 1}: duración en horas es obligatoria`)
+    else if (parseInt(e.duracion_horas) < 1)
+      errores.push(`${e.tipo} ${i + 1}: la duración debe ser al menos 1 hora`)
+    if (!e.tipo_constancia)
+      errores.push(`${e.tipo} ${i + 1}: tipo de constancia es obligatorio`)
     if (e.fecha_inicio && e.fecha_fin &&
         e.fecha_fin < e.fecha_inicio)
       errores.push(`${e.tipo} ${i + 1}: la fecha de fin no puede ser anterior a la fecha de inicio`)
-    // Duración de horas válida
-    if (e.duracion_horas && parseInt(e.duracion_horas) < 1)
-      errores.push(`${e.tipo} ${i + 1}: la duración debe ser al menos 1 hora`)
   })
 
   return errores
@@ -404,7 +412,7 @@ export function validarPaso5(expLaboral, expDocente) {
         e.fecha_culminacion < e.fecha_inicio)
       errores.push(`Experiencia docente ${i + 1}: la fecha de culminación no puede ser anterior a la fecha de inicio`)
   })
-  
+
   return errores
 }
 
@@ -416,6 +424,12 @@ export function validarPaso6(otrasInst, reconocimientos) {
       errores.push("Ingrese el nombre de la otra institución")
     if (!otrasInst.tipo_personal)
       errores.push("Seleccione el tipo de personal en la otra institución")
+    if (otrasInst.horas_diarias !== null &&
+        otrasInst.horas_diarias !== undefined &&
+        otrasInst.horas_diarias !== "") {
+      if (otrasInst.horas_diarias < 1 || otrasInst.horas_diarias > 12)
+        errores.push("Las horas diarias en otra institución deben estar entre 1 y 12")
+    }
   }
 
   reconocimientos.forEach((r, i) => {

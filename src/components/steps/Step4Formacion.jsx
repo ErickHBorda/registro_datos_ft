@@ -71,6 +71,31 @@ const reglasOtroEstudio = {
         minLength: 2,
         mensajeRequerido: "Centro de estudios es obligatorio",
     },
+    fecha_inicio: {
+        requerido: true,
+        mensajeRequerido: "Fecha de inicio es obligatoria",
+    },
+    fecha_fin: {
+        requerido: true,
+        mensajeRequerido: "Fecha de fin es obligatoria",
+    },
+    fecha_emision: {
+        requerido: true,
+        mensajeRequerido: "Fecha de emisión es obligatoria",
+    },
+    duracion_horas: {
+        requerido: true,
+        mensajeRequerido: "Duración en horas es obligatoria",
+        validar: (v) => {
+            if (!v) return true
+            if (parseInt(v) < 1) return "La duración debe ser al menos 1 hora"
+            return true
+        },
+    },
+    tipo_constancia: {
+        requerido: true,
+        mensajeRequerido: "Tipo de constancia es obligatorio",
+    },
 }
 
 // ══ EBR — Card colapsable inline (sin cambios) ═════════════
@@ -487,11 +512,21 @@ export default function Step4Formacion({
                 errores.push("Nombre del curso es obligatorio")
             if (!item.centro_estudios?.trim())
                 errores.push("Centro de estudios es obligatorio")
+            if (!item.fecha_inicio)
+                errores.push("Fecha de inicio es obligatoria")
+            if (!item.fecha_fin)
+                errores.push("Fecha de fin es obligatoria")
+            if (!item.fecha_emision)
+                errores.push("Fecha de emisión es obligatoria")
+            if (!item.duracion_horas)
+                errores.push("Duración en horas es obligatoria")
+            else if (parseInt(item.duracion_horas) < 1)
+                errores.push("La duración debe ser al menos 1 hora")
+            if (!item.tipo_constancia)
+                errores.push("Tipo de constancia es obligatorio")
             if (item.fecha_inicio && item.fecha_fin &&
                 item.fecha_fin < item.fecha_inicio)
                 errores.push("La fecha de fin no puede ser anterior a la fecha de inicio")
-            if (item.duracion_horas && parseInt(item.duracion_horas) < 1)
-                errores.push("La duración debe ser al menos 1 hora")
             if (errores.length > 0) {
                 mostrarErroresPaso(errores, modal.nivel)
                 return

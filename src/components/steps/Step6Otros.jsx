@@ -308,12 +308,21 @@ export default function Step6Otros({
                 label="Horas Diarias" type="number"
                 min={1} max={12}
                 value={otrasInstituciones.horas_diarias ?? ""}
-                onChange={(e) =>
-                  set("horas_diarias", parseInt(e.target.value) || null)
-                }
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || null
+                  if (val === null || (val >= 1 && val <= 12))
+                    set("horas_diarias", val)
+                }}
                 tocado={!!otrasInstituciones.horas_diarias}
-                valido={!!otrasInstituciones.horas_diarias}
-                placeholder="Ej: 4"
+                valido={!!otrasInstituciones.horas_diarias &&
+                  otrasInstituciones.horas_diarias >= 1 &&
+                  otrasInstituciones.horas_diarias <= 12}
+                error={otrasInstituciones.horas_diarias &&
+                  (otrasInstituciones.horas_diarias < 1 ||
+                    otrasInstituciones.horas_diarias > 12)
+                  ? "Las horas diarias deben estar entre 1 y 12"
+                  : ""}
+                placeholder="Entre 1 y 12 horas"
               />
             </FieldGrid>
 
