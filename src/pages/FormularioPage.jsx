@@ -1,7 +1,7 @@
-import { useRef, useState, useMemo, useCallback } from "react"
+import { useRef, useState, useMemo, useCallback, useEffect } from "react"
 import { Toaster, toast } from "react-hot-toast"
 import { useFicha } from "../hooks/useFicha"
-import { personalService, fotosService } from "../services/api"
+import { personalService, fotosService, iniciarKeepAlive, detenerKeepAlive } from "../services/api"
 import { adminService, solicitudService } from "../services/adminApi"
 import { useModalBienvenida } from "../hooks/useModal"
 import ModalBienvenida from "../components/ui/ModalBienvenida"
@@ -89,6 +89,11 @@ export default function FormularioPage() {
   const [modalCancelar,  setModalCancelar]  = useState(false)
   const [pantalla, setPantalla] = useState({ visible: false, tipo: "cargando", titulo: "", subtitulo: "" })
 
+  // ── Keep-alive: mantiene el servidor despierto ────────
+  useEffect(() => {
+    iniciarKeepAlive()
+    return () => detenerKeepAlive() // limpia al desmontar
+  }, [])
   // ── Handlers de PantallaInicioDNI ────────────────────────
 
   // Nuevo registro — simplemente pasar al formulario
