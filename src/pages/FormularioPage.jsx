@@ -499,7 +499,7 @@ export default function FormularioPage() {
       {fase === "edicion" && (
         <div className="sticky top-0 z-50 bg-amber-500
                         text-white text-center text-xs font-semibold py-1.5">
-          ✏️ Modo actualización — Modifique los datos necesarios y envíe
+          Modo actualización — Modifique los datos necesarios y envíe
         </div>
       )}
       <BarraProgreso
@@ -509,7 +509,8 @@ export default function FormularioPage() {
         offsetTop={fase === "edicion" ? 28 : 0}
         onCancelar={handleCancelar}
       />
-      <main className="max-w-3xl mx-auto px-4 pb-6 pt-6 space-y-5">
+      <main className="max-w-3xl mx-auto px-4 pb-6 space-y-5"
+        style={{ paddingTop: "148px" }}>
 
         <div ref={topRef} />
 
