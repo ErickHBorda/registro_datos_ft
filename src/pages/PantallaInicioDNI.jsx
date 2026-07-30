@@ -8,12 +8,12 @@ import { solicitudService } from "../services/adminApi"
 import PantallaEstado from "../components/ui/PantallaEstado"
 
 export default function PantallaInicioDNI({ onNuevoRegistro, onEditarRegistro }) {
-  const [dni,        setDni]        = useState("")
-  const [estado,     setEstado]     = useState(null)
-  const [cargando,   setCargando]   = useState(false)
-  const [error,      setError]      = useState("")
-  const [motivo,     setMotivo]     = useState("")
-  const [enviando,   setEnviando]   = useState(false)
+  const [dni, setDni] = useState("")
+  const [estado, setEstado] = useState(null)
+  const [cargando, setCargando] = useState(false)
+  const [error, setError] = useState("")
+  const [motivo, setMotivo] = useState("")
+  const [enviando, setEnviando] = useState(false)
   const [solEnviada, setSolEnviada] = useState(false)
 
   const [pantalla, setPantalla] = useState({ visible: false, tipo: "cargando", titulo: "", subtitulo: "" })
@@ -124,7 +124,7 @@ export default function PantallaInicioDNI({ onNuevoRegistro, onEditarRegistro })
                   type="text"
                   value={dni}
                   onChange={(e) => {
-                    setDni(e.target.value.replace(/\D/g,"").slice(0,8))
+                    setDni(e.target.value.replace(/\D/g, "").slice(0, 8))
                     setEstado(null); setError(""); setSolEnviada(false)
                   }}
                   onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
@@ -200,12 +200,12 @@ export default function PantallaInicioDNI({ onNuevoRegistro, onEditarRegistro })
                                   bg-slate-200 shrink-0">
                     {estado.foto_url
                       ? <img src={estado.foto_url} alt=""
-                          className="w-full h-full object-cover" />
+                        className="w-full h-full object-cover" />
                       : <div className="w-full h-full flex items-center
                                         justify-center text-slate-400 text-xs
                                         text-center font-medium p-1">
-                          Sin foto
-                        </div>
+                        Sin foto
+                      </div>
                     }
                   </div>
                   <div className="min-w-0">
@@ -356,6 +356,15 @@ export default function PantallaInicioDNI({ onNuevoRegistro, onEditarRegistro })
               </div>
             )}
           </div>
+          {/* Link volver */}
+          <div className="pt-2 border-t border-slate-100 text-center">
+            <a href="/admin"
+              className="text-xs text-slate-300 hover:text-primary-500
+                           transition-colors">
+              → Ingresar como Admin
+            </a>
+          </div>
+          <br />
         </div>
 
         <p className="text-center text-white/20 text-xs mt-4">
